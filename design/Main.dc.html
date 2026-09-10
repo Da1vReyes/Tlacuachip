@@ -1,0 +1,545 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: #1F6B4C; text-decoration: none; }
+    a:hover { color: #164E38; }
+    .phone { width: 390px; height: 844px; background: #FAF7F2; position: relative; overflow: hidden; border-radius: 40px; box-shadow: 0 20px 60px rgba(31,26,21,0.25); }
+    .scroll { position: absolute; inset: 0; overflow-y: auto; }
+    .screen { padding: 24px 20px 40px; display: flex; flex-direction: column; gap: 18px; min-height: 844px; }
+    .topbar { display: flex; align-items: center; padding: 4px 0 4px; }
+    .back-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: #FFFFFF; box-shadow: 0 1px 2px rgba(31,26,21,0.08); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    h1 { font-size: 25px; margin: 0; line-height: 1.2; color: #1F1A15; font-weight: 800; }
+    h2 { font-size: 18px; margin: 0; color: #1F1A15; font-weight: 700; }
+    p { margin: 0; color: #6B5F52; line-height: 1.5; font-size: 14px; }
+    .muted { color: #6B5F52; font-size: 12.5px; }
+    .stack { display: flex; flex-direction: column; gap: 12px; }
+    .row { display: flex; gap: 10px; }
+    .card { background: #FFFFFF; border-radius: 16px; padding: 16px; box-shadow: 0 1px 2px rgba(31,26,21,0.06), 0 8px 24px rgba(31,26,21,0.06); border: 1px solid #E7DFD3; }
+    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; background: #E4F1EA; color: #1F6B4C; width: fit-content; }
+    .pill-accent { background: #FBE8D8; color: #D97B3F; }
+    .btn { border: none; border-radius: 999px; padding: 14px 20px; font-size: 14.5px; font-weight: 700; cursor: pointer; width: 100%; font-family: inherit; }
+    .btn-primary { background: #1F6B4C; color: #FFFFFF; }
+    .btn-secondary { background: #FFFFFF; color: #1F1A15; border: 1.5px solid #E7DFD3; }
+    .btn-ghost { background: transparent; color: #1F6B4C; padding: 8px 4px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 12.5px; font-weight: 700; color: #6B5F52; }
+    .field input, .field select, .field textarea { border: 1.5px solid #E7DFD3; border-radius: 12px; padding: 12px 13px; font-size: 14.5px; background: #FFFFFF; color: #1F1A15; font-family: inherit; }
+    .progress-track { height: 8px; border-radius: 999px; background: #E7DFD3; overflow: hidden; }
+    .progress-fill { height: 100%; background: #1F6B4C; border-radius: 999px; }
+  </style>
+</helmet>
+
+<div class="phone">
+  <div class="scroll">
+
+    <sc-if value="{{isLanding}}" hint-placeholder-val="{{true}}">
+      <div class="screen" style="justify-content: space-between; min-height: 844px;">
+        <div></div>
+        <div class="stack" style="align-items: center; text-align: center; gap: 22px;">
+          <div style="width: 68px; height: 68px; border-radius: 20px; background: #1F6B4C; display: flex; align-items: center; justify-content: center;">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FAF7F2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c-4-2-8-6-8-11a8 8 0 0 1 16 0c0 5-4 9-8 11Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>
+          </div>
+          <div class="stack" style="gap: 8px;">
+            <span class="muted" style="font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; font-size: 11px;">Tlacuachip</span>
+            <h1>Empieza tu negocio</h1>
+            <p>Convierte tu idea en un plan real. Datos de tu localidad, un roadmap paso a paso y una comunidad de emprendedores como tú.</p>
+          </div>
+        </div>
+        <div class="stack">
+          <button class="btn btn-primary" onClick="{{goToAuth}}">Empieza tu negocio</button>
+          <button class="btn btn-ghost" onClick="{{goToAuth}}">Ya tengo una cuenta</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isAuth}}" hint-placeholder-val="{{false}}">
+      <div class="screen">
+        <div class="topbar"><button class="back-btn" onClick="{{goToLanding}}">←</button></div>
+        <div class="stack" style="gap: 4px;">
+          <h1>Crea tu cuenta</h1>
+          <p>Guarda tu progreso y accede a tu reporte cuando quieras.</p>
+        </div>
+        <div class="stack">
+          <div class="field"><label>Nombre</label><input placeholder="Tu nombre"/></div>
+          <div class="field"><label>Correo electrónico</label><input placeholder="tucorreo@ejemplo.com"/></div>
+          <div class="field"><label>Contraseña</label><input type="password" placeholder="••••••••"/></div>
+          <button class="btn btn-primary" style="margin-top: 6px;" onClick="{{goToForm}}">Crear cuenta</button>
+        </div>
+        <button class="btn btn-ghost">¿Ya tienes cuenta? Inicia sesión</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isForm}}" hint-placeholder-val="{{false}}">
+      <div class="screen">
+        <div class="topbar"><button class="back-btn" onClick="{{goToAuth}}">←</button></div>
+        <div class="stack" style="gap: 4px;">
+          <h1>Cuéntanos tu idea</h1>
+          <p>Con esto generamos un reporte con datos reales de tu localidad.</p>
+        </div>
+        <div class="stack">
+          <div class="field"><label>¿Qué negocio quieres emprender?</label><input value="Cafetería de especialidad"/></div>
+          <div class="field"><label>Categoría</label><select><option>Cafetería</option><option>Restaurante</option><option>Salón de belleza</option></select></div>
+          <div class="field"><label>¿Cuánto dinero tienes para invertir? (MXN)</label><input value="80,000"/><span class="muted">Entre $50 y $500,000</span></div>
+          <div class="row">
+            <div class="field" style="flex:1"><label>País</label><select><option>México</option></select></div>
+            <div class="field" style="flex:1"><label>Estado</label><input value="CDMX"/></div>
+          </div>
+          <div class="field"><label>Ciudad</label><input value="Ciudad de México"/></div>
+          <button class="btn btn-primary" style="margin-top: 6px;" onClick="{{goToReport}}">Generar mi reporte</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isReport}}" hint-placeholder-val="{{false}}">
+      <div class="screen">
+        <div class="topbar"><button class="back-btn" onClick="{{goToForm}}">←</button></div>
+        <div class="stack" style="gap: 4px;">
+          <span class="pill">Reporte de Ciudad de México</span>
+          <h1>Así está el mercado para "Cafetería de especialidad"</h1>
+          <p>Esta información viene de fuentes públicas y oficiales. No es una recomendación, es contexto para que decidas con datos reales.</p>
+        </div>
+        <div class="row">
+          <div class="card" style="flex:1"><div class="muted">Crecimiento del sector</div><div style="font-size:22px;font-weight:800;color:#1F6B4C;">+8.4%</div><div class="muted">2023–2025</div></div>
+          <div class="card" style="flex:1"><div class="muted">Negocios similares</div><div style="font-size:22px;font-weight:800;">342</div><div class="muted">registrados</div></div>
+        </div>
+        <div class="row">
+          <div class="card" style="flex:1"><div class="muted">Ingreso mensual prom.</div><div style="font-size:18px;font-weight:800;">$14,400 MXN</div></div>
+          <div class="card" style="flex:1"><div class="muted">Sobrevive 5 años</div><div style="font-size:18px;font-weight:800;">62%</div></div>
+        </div>
+        <div class="card stack">
+          <h2>Lo que dicen los datos</h2>
+          <p>• El sector ha crecido de forma sostenida en Ciudad de México, CDMX.</p>
+          <p>• Punto de equilibrio entre 8 y 14 meses para inversión similar.</p>
+          <p>• Densidad de competencia media, oportunidad en horario vespertino.</p>
+        </div>
+        <div class="card stack">
+          <h2>Fuentes</h2>
+          <div class="stack" style="gap:2px"><a href="#" style="font-weight:700;font-size:13px;">DENUE</a><span class="muted">INEGI · 2024</span></div>
+          <div class="stack" style="gap:2px"><a href="#" style="font-weight:700;font-size:13px;">Fomento a la MyPE</a><span class="muted">Secretaría de Economía · 2024</span></div>
+        </div>
+        <button class="btn btn-secondary" onClick="{{goToHeatmap}}">Ver mapa de calor de oferta, demanda y costos</button>
+        <button class="btn btn-primary" onClick="{{goToRoadmap}}">Quiero continuar con mi negocio</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isHeatmap}}" hint-placeholder-val="{{false}}">
+      <div class="screen">
+        <div class="topbar"><button class="back-btn" onClick="{{goToReport}}">←</button></div>
+        <div class="stack" style="gap: 4px;">
+          <span class="pill">Mapa de calor · CDMX</span>
+          <h1>Oferta, demanda y costo por zona</h1>
+          <p>Comparamos tu ubicación con las zonas cercanas. Datos estimados, no un consejo financiero.</p>
+        </div>
+        <div class="row" style="flex-wrap: wrap; gap: 8px;">
+          <sc-for list="{{metrics}}" as="m" hint-placeholder-count="4">
+            <button class="pill" style="border:none;cursor:pointer;background:{{m.bg}};color:{{m.fg}};" onClick="{{m.pick}}">{{m.label}}</button>
+          </sc-for>
+        </div>
+        <div class="card stack">
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            <sc-for list="{{zones}}" as="z" hint-placeholder-count="9">
+              <button onClick="{{z.pick}}" style="aspect-ratio:1; border-radius:12px; border:{{z.border}}; background:{{z.bg}}; color:{{z.fg}}; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px;">
+                <span style="font-size:10.5px; font-weight:700; text-align:center;">{{z.name}}</span>
+                <span style="font-size:15px; font-weight:800;">{{z.val}}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div class="row" style="justify-content: space-between; align-items: center;">
+            <span class="muted">{{metricLow}}</span>
+            <div style="flex:1; margin:0 10px; height:8px; border-radius:999px; background:{{metricGradient}};"></div>
+            <span class="muted">{{metricHigh}}</span>
+          </div>
+        </div>
+        <sc-if value="{{hasSelectedZone}}" hint-placeholder-val="{{false}}">
+          <div class="card stack">
+            <div class="row" style="justify-content: space-between;"><h2>{{selectedZone.name}}</h2><button class="btn-ghost" style="border:none;background:none;cursor:pointer;color:#1F6B4C;font-weight:700;" onClick="{{clearZone}}">Cerrar</button></div>
+            <div class="row">
+              <div class="stack" style="flex:1;gap:2px"><span class="muted">Demanda</span><span style="font-weight:700">{{selectedZone.demand}}/100</span></div>
+              <div class="stack" style="flex:1;gap:2px"><span class="muted">Oferta</span><span style="font-weight:700">{{selectedZone.supply}}/100</span></div>
+              <div class="stack" style="flex:1;gap:2px"><span class="muted">Costo</span><span style="font-weight:700">{{selectedZone.cost}}/100</span></div>
+            </div>
+          </div>
+        </sc-if>
+        <div class="card">
+          <span class="muted">Mejor oportunidad estimada</span>
+          <h2>Tu zona</h2>
+          <p>Demanda alta y baja competencia, puntaje de 67/100.</p>
+        </div>
+        <button class="btn btn-primary" onClick="{{goToRoadmap}}">Continuar con mi negocio</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isRoadmap}}" hint-placeholder-val="{{false}}">
+      <div class="screen" style="gap: 14px;">
+        <div class="topbar"><button class="back-btn" onClick="{{goToReport}}">←</button></div>
+        <div class="stack" style="gap: 4px;">
+          <h1>Tu camino</h1>
+          <p>Cada paso te acerca a un negocio real. Complétalos a tu ritmo.</p>
+        </div>
+        <div class="card stack">
+          <div class="row" style="justify-content: space-between; align-items: baseline;">
+            <span style="font-weight: 800;">🏅 Nivel {{level}}</span>
+            <span class="muted">{{xp}} / {{xpNext}} XP</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width: {{xpPct}}%;"></div></div>
+        </div>
+        <div style="position: relative; width: 100%; height: {{pathHeight}}px; margin: 6px 0;">
+          <svg width="100%" height="{{pathHeight}}" viewBox="-130 0 260 {{pathHeight}}" style="position:absolute; top:0; left:0;">
+            <polyline points="{{allPoints}}" fill="none" stroke="#E7DFD3" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"></polyline>
+            <polyline points="{{donePoints}}" fill="none" stroke="#1F6B4C" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          </svg>
+          <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+            <div style="position:absolute; left:calc(50% + {{s.x}}px - 32px); top:{{s.y}}px; width:64px; display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <button onClick="{{s.pick}}" style="width:64px; height:64px; border-radius:50%; border:{{s.border}}; background:{{s.bg}}; color:{{s.fg}}; cursor:pointer; box-shadow:{{s.shadow}}; display:flex; align-items:center; justify-content:center; position:relative;">
+                <sc-if value="{{s.done}}" hint-placeholder-val="{{false}}">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+                </sc-if>
+                <sc-if value="{{s.isLocked}}" hint-placeholder-val="{{false}}">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+                </sc-if>
+                <sc-if value="{{s.isOpen}}" hint-placeholder-val="{{false}}">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+                </sc-if>
+              </button>
+              <span class="muted" style="font-size:10.5px; text-align:center; font-weight:{{s.labelWeight}}; color:{{s.labelColor}}; line-height:1.2;">{{s.title}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <button class="btn btn-secondary" onClick="{{goToCommunity}}">Ver comunidad</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isStep}}" hint-placeholder-val="{{false}}">
+      <div class="screen">
+        <div class="topbar"><button class="back-btn" onClick="{{goToRoadmap}}">←</button></div>
+        <div class="stack" style="gap: 4px;">
+          <span class="pill pill-accent">+{{activeStep.xp}} XP</span>
+          <h1>{{activeStep.title}}</h1>
+          <p>{{activeStep.summary}}</p>
+        </div>
+        <div class="card stack">
+          <h2>Cómo hacerlo</h2>
+          <sc-for list="{{activeStep.instructions}}" as="ins" hint-placeholder-count="3">
+            <div class="row" style="align-items: flex-start; gap: 10px;">
+              <span style="min-width:22px;height:22px;border-radius:50%;background:#E4F1EA;color:#1F6B4C;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;">{{ins.n}}</span>
+              <p style="color:#1F1A15;">{{ins.text}}</p>
+            </div>
+          </sc-for>
+        </div>
+        <div class="row">
+          <div class="card" style="flex:1"><div class="muted">Costo</div><div style="font-weight:700">{{activeStep.cost}}</div></div>
+          <div class="card" style="flex:1"><div class="muted">Modalidad</div><div style="font-weight:700">{{activeStep.mode}}</div></div>
+        </div>
+        <sc-if value="{{activeStep.hasMentors}}" hint-placeholder-val="{{false}}">
+          <button class="btn btn-secondary" onClick="{{goToMentors}}">Conectar con mentores</button>
+        </sc-if>
+        <sc-if value="{{activeStep.hasProviders}}" hint-placeholder-val="{{false}}">
+          <button class="btn btn-secondary" onClick="{{goToMarketplace}}">Ver proveedores</button>
+        </sc-if>
+        <button class="btn btn-primary" onClick="{{completeActiveStep}}">{{activeStep.completeLabel}}</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isMentors}}" hint-placeholder-val="{{false}}">
+      <div class="screen">
+        <div class="topbar"><button class="back-btn" onClick="{{goToRoadmap}}">←</button></div>
+        <div class="stack" style="gap: 4px;"><h1>Mentores para ti</h1><p>Personas que ya recorrieron este camino y pueden guiarte.</p></div>
+        <div class="stack">
+          <sc-for list="{{mentors}}" as="m" hint-placeholder-count="4">
+            <div class="card row" style="align-items:center; gap:14px;">
+              <div style="width:44px;height:44px;border-radius:50%;background:{{m.color}};flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;">{{m.initial}}</div>
+              <div class="stack" style="gap:2px; flex:1;"><span style="font-weight:700;font-size:14px;">{{m.name}}</span><span class="muted">{{m.expertise}}</span><span class="muted">{{m.meta}}</span></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isMarketplace}}" hint-placeholder-val="{{false}}">
+      <div class="screen">
+        <div class="topbar"><button class="back-btn" onClick="{{goToRoadmap}}">←</button></div>
+        <div class="stack" style="gap: 4px;"><h1>Marketplace</h1><p>Proveedores de productos y servicios validados por la comunidad.</p></div>
+        <div class="stack">
+          <sc-for list="{{providers}}" as="p" hint-placeholder-count="3">
+            <div class="card stack" style="gap:6px;">
+              <div class="row" style="justify-content: space-between; align-items: flex-start;"><span style="font-weight:700; font-size:14px;">{{p.name}}</span><span class="pill">{{p.type}}</span></div>
+              <p>{{p.description}}</p>
+              <span class="muted">{{p.meta}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <button class="btn btn-secondary" onClick="{{goToProviderSignup}}">Soy proveedor, quiero registrarme</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isProviderSignup}}" hint-placeholder-val="{{false}}">
+      <div class="screen">
+        <div class="topbar"><button class="back-btn" onClick="{{goToMarketplace}}">←</button></div>
+        <sc-if value="{{providerSubmitted}}" hint-placeholder-val="{{false}}">
+          <div class="stack" style="align-items:center; text-align:center; gap:14px; margin-top: 140px;">
+            <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#1F6B4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>
+            <h1>¡Listo!</h1>
+            <p>Tu perfil de proveedor está en revisión. Pronto aparecerás en el marketplace.</p>
+            <button class="btn btn-primary" onClick="{{goToMarketplace}}">Volver al marketplace</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{providerNotSubmitted}}" hint-placeholder-val="{{true}}">
+          <div class="stack" style="gap: 4px;"><h1>Regístrate como proveedor</h1><p>Llega a cientos de nuevos negocios que están arrancando.</p></div>
+          <div class="stack">
+            <div class="field"><label>Nombre del negocio</label><input placeholder="Ej. Café Altura Mayor"/></div>
+            <div class="field"><label>Tipo</label><select><option>Producto</option><option>Servicio</option></select></div>
+            <div class="field"><label>Categoría</label><input placeholder="Ej. Cafeterías"/></div>
+            <div class="field"><label>Ubicación</label><input placeholder="Ciudad, país"/></div>
+            <div class="field"><label>Descripción breve</label><textarea rows="3" placeholder="¿Qué ofreces?"></textarea></div>
+            <button class="btn btn-primary" style="margin-top:6px;" onClick="{{submitProvider}}">Enviar registro</button>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isCommunity}}" hint-placeholder-val="{{false}}">
+      <div class="screen">
+        <div class="topbar"><button class="back-btn" onClick="{{goToRoadmap}}">←</button></div>
+        <div class="stack" style="gap: 4px;">
+          <span class="pill">Acceso activo</span>
+          <h1>Comunidad</h1>
+          <p>Emprendedores de toda Latinoamérica compartiendo su camino.</p>
+        </div>
+        <div class="stack">
+          <sc-for list="{{messages}}" as="msg" hint-placeholder-count="3">
+            <div class="card stack" style="gap:6px;">
+              <div class="row" style="justify-content: space-between;"><span style="font-weight:700; font-size:14px;">{{msg.author}}</span><span class="muted">{{msg.timestamp}}</span></div>
+              <span class="muted">{{msg.meta}}</span>
+              <p style="color:#1F1A15;">{{msg.text}}</p>
+            </div>
+          </sc-for>
+        </div>
+        <div class="field"><textarea rows="2" placeholder="Comparte algo con la comunidad..."></textarea></div>
+        <button class="btn btn-primary">Publicar</button>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{}'>
+const STEP_BASE = [
+  { id: "legal-1", title: "Registra tu negocio", xp: 100, summary: "Antes de operar necesitas estar registrado fiscalmente. Esto te permite emitir facturas y evitar multas.", instructions: ["Reúne tu identificación oficial y comprobante de domicilio.", "Ingresa al portal oficial y elige el régimen simplificado.", "Agenda tu cita para la firma electrónica.", "Completa tu alta y guarda tu constancia."], cost: "Gratis", mode: "En línea", hasMentors: true, hasProviders: false },
+  { id: "mentoria-1", title: "Conéctate con un mentor", xp: 150, summary: "Aprende de errores ajenos antes de cometerlos. Conectamos tu perfil con mentores validados en tu giro.", instructions: ["Revisa los mentores sugeridos para tu categoría.", "Agenda una primera llamada de diagnóstico.", "Define con tu mentor los 3 riesgos principales."], cost: "Gratis", mode: "En línea", hasMentors: true, hasProviders: false },
+  { id: "finanzas-1", title: "Define tu presupuesto", xp: 120, summary: "Un presupuesto claro evita quedarte sin efectivo en los primeros meses.", instructions: ["Divide tu presupuesto en equipamiento, inventario, renta y colchón.", "Usa la plantilla sugerida para simular tu flujo de efectivo.", "Ajusta según los datos de tu reporte de sector."], cost: "Gratis", mode: "En línea", hasMentors: false, hasProviders: true },
+  { id: "marketing-1", title: "Crea tus redes sociales", xp: 100, summary: "Tus primeros clientes muy probablemente te van a encontrar en redes antes que caminando por la calle.", instructions: ["Crea perfil de negocio en Instagram y Google Business.", "Publica ubicación, horarios y catálogo inicial.", "Planea tu primer mes de contenido."], cost: "Gratis", mode: "En línea", hasMentors: false, hasProviders: false },
+  { id: "operaciones-1", title: "Consigue proveedores clave", xp: 130, summary: "Comparamos proveedores por precio, tiempo de entrega y reputación en nuestro marketplace.", instructions: ["Explora el marketplace filtrando por tu categoría.", "Solicita al menos 3 cotizaciones.", "Cierra tu primer pedido de inventario."], cost: "Variable", mode: "En línea", hasMentors: false, hasProviders: true },
+];
+
+const ZONES_BASE = [
+  { id: "0-0", name: "Centro", opportunity: 47, demand: 52, supply: 58, cost: 54 },
+  { id: "0-1", name: "Norte", opportunity: 55, demand: 61, supply: 45, cost: 50 },
+  { id: "0-2", name: "Noreste", opportunity: 47, demand: 50, supply: 50, cost: 48 },
+  { id: "1-0", name: "Poniente", opportunity: 29, demand: 38, supply: 72, cost: 66 },
+  { id: "1-1", name: "Tu zona", opportunity: 67, demand: 74, supply: 34, cost: 42 },
+  { id: "1-2", name: "Oriente", opportunity: 47, demand: 49, supply: 49, cost: 47 },
+  { id: "2-0", name: "Suroeste", opportunity: 55, demand: 58, supply: 40, cost: 45 },
+  { id: "2-1", name: "Sur", opportunity: 61, demand: 66, supply: 38, cost: 41 },
+  { id: "2-2", name: "Sureste", opportunity: 37, demand: 41, supply: 60, cost: 58 },
+];
+
+const METRICS = [
+  { key: "opportunity", label: "Oportunidad", goodHigh: true },
+  { key: "demand", label: "Demanda", goodHigh: true },
+  { key: "supply", label: "Oferta", goodHigh: false },
+  { key: "cost", label: "Costo", goodHigh: false },
+];
+
+const MENTORS = [
+  { name: "Laura Jiménez", expertise: "Cafeterías y coffee shops", meta: "CDMX · 4 negocios · ★4.9", color: "#E0A96D" },
+  { name: "Carlos Medina", expertise: "Restaurantes y food trucks", meta: "Guadalajara · 3 negocios · ★4.7", color: "#6D9EE0" },
+  { name: "Ana Rodríguez", expertise: "Salones de belleza", meta: "Monterrey · 6 negocios · ★5.0", color: "#E06D9E" },
+  { name: "Diego Torres", expertise: "Talleres mecánicos", meta: "Bogotá · 2 negocios · ★4.6", color: "#6DE0A9" },
+];
+
+const PROVIDERS = [
+  { name: "Café Altura Mayor", type: "Producto", description: "Café en grano de origen, mínimo 10kg.", meta: "CDMX · ★4.8" },
+  { name: "Muebles Industriales RM", type: "Producto", description: "Mobiliario para cafeterías, hecho a medida.", meta: "Puebla · ★4.5" },
+  { name: "Electricistas del Valle", type: "Servicio", description: "Instalaciones eléctricas certificadas.", meta: "Monterrey · ★4.9" },
+];
+
+const MESSAGES = [
+  { author: "Mariana G.", meta: "Cafetería · CDMX", text: "¿Vale la pena comprar la máquina de espresso nueva o reacondicionada para arrancar?", timestamp: "hace 2 h" },
+  { author: "Jorge P.", meta: "Plomería · Medellín", text: "Cerré mi primer mes con 15 clientes recurrentes, el boca a boca funcionó mejor que las redes.", timestamp: "hace 5 h" },
+  { author: "Sofía R.", meta: "Papelería · Lima", text: "Tip: negocien plazos de pago con proveedores desde el día 1.", timestamp: "hace 1 d" },
+];
+
+const ZIGZAG = [0, 1, 0, -1];
+const NODE_GAP = 112;
+
+function colorFor(value, goodHigh) {
+  const score = goodHigh ? value : 100 - value;
+  if (score >= 70) return { bg: "#1F6B4C", fg: "#FFFFFF" };
+  if (score >= 55) return { bg: "#6FA98A", fg: "#FFFFFF" };
+  if (score >= 40) return { bg: "#E8DFC8", fg: "#1F1A15" };
+  if (score >= 25) return { bg: "#EFC9A0", fg: "#1F1A15" };
+  return { bg: "#D97B3F", fg: "#FFFFFF" };
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      screen: "landing",
+      completedSteps: [],
+      activeStepId: null,
+      heatMetric: "opportunity",
+      selectedZoneId: null,
+      providerSubmitted: false,
+    };
+  }
+
+  go(screen) {
+    this.setState({ screen });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const go = (scr) => () => this.setState({ screen: scr });
+
+    const xp = STEP_BASE.filter((st) => s.completedSteps.includes(st.id)).reduce((a, st) => a + st.xp, 0);
+    const level = Math.floor(xp / 400) + 1;
+    const xpInLevel = xp % 400;
+
+    const steps = STEP_BASE.map((base, i) => {
+      const done = s.completedSteps.includes(base.id);
+      const prevDone = i === 0 || s.completedSteps.includes(STEP_BASE[i - 1].id);
+      const isLocked = !done && !prevDone;
+      const isOpen = !done && prevDone;
+      const x = ZIGZAG[i % 4] * 70;
+      const y = i * NODE_GAP;
+      return {
+        ...base,
+        done,
+        isLocked,
+        isOpen,
+        x,
+        y,
+        border: done ? "3px solid #1F6B4C" : isOpen ? "3px solid #D97B3F" : "3px solid #E7DFD3",
+        bg: done ? "#1F6B4C" : "#FFFFFF",
+        fg: done ? "#FFFFFF" : "#1F1A15",
+        shadow: isOpen ? "0 0 0 6px #FBE8D8" : "0 1px 2px rgba(31,26,21,0.06), 0 8px 24px rgba(31,26,21,0.06)",
+        labelWeight: isLocked ? 400 : 700,
+        labelColor: isLocked ? "#6B5F52" : "#1F1A15",
+        completeLabel: done ? "Ya completado" : "Marcar como completado",
+        pick: () => { if (!isLocked) this.setState({ screen: "step", activeStepId: base.id }); },
+      };
+    });
+
+    const allPoints = steps.map((st) => `${195 + st.x},${st.y + 32}`).join(" ");
+    let doneCount = 0;
+    while (doneCount < steps.length && steps[doneCount].done) doneCount++;
+    const donePoints = steps.slice(0, Math.max(doneCount, 1)).map((st) => `${195 + st.x},${st.y + 32}`).join(" ");
+    const pathHeight = steps.length * NODE_GAP + 64;
+
+    const activeBase = STEP_BASE.find((b) => b.id === s.activeStepId) || STEP_BASE[0];
+    const activeDone = s.completedSteps.includes(activeBase.id);
+    const activeStep = {
+      ...activeBase,
+      instructions: activeBase.instructions.map((text, i) => ({ text, n: i + 1 })),
+      completeLabel: activeDone ? "Ya completado" : "Marcar como completado",
+    };
+
+    const metrics = METRICS.map((m) => ({
+      key: m.key,
+      label: m.label,
+      bg: s.heatMetric === m.key ? "#1F6B4C" : "#E4F1EA",
+      fg: s.heatMetric === m.key ? "#FFFFFF" : "#1F6B4C",
+      pick: () => this.setState({ heatMetric: m.key }),
+    }));
+
+    const activeMetric = METRICS.find((m) => m.key === s.heatMetric);
+    const zones = ZONES_BASE.map((z) => {
+      const value = z[s.heatMetric];
+      const { bg, fg } = colorFor(value, activeMetric.goodHigh);
+      const isCenter = z.name === "Tu zona";
+      return {
+        ...z,
+        val: value,
+        bg,
+        fg,
+        border: isCenter ? "3px solid #1F1A15" : "1px solid rgba(0,0,0,0.06)",
+        pick: () => this.setState({ selectedZoneId: z.id }),
+      };
+    });
+    const selectedZone = zones.find((z) => z.id === s.selectedZoneId) || null;
+
+    return {
+      isLanding: s.screen === "landing",
+      isAuth: s.screen === "auth",
+      isForm: s.screen === "form",
+      isReport: s.screen === "report",
+      isHeatmap: s.screen === "heatmap",
+      isRoadmap: s.screen === "roadmap",
+      isStep: s.screen === "step",
+      isMentors: s.screen === "mentors",
+      isMarketplace: s.screen === "marketplace",
+      isProviderSignup: s.screen === "providerSignup",
+      isCommunity: s.screen === "community",
+
+      goToLanding: go("landing"),
+      goToAuth: go("auth"),
+      goToForm: go("form"),
+      goToReport: go("report"),
+      goToHeatmap: go("heatmap"),
+      goToRoadmap: go("roadmap"),
+      goToMentors: go("mentors"),
+      goToMarketplace: go("marketplace"),
+      goToProviderSignup: go("providerSignup"),
+      goToCommunity: go("community"),
+
+      level,
+      xp,
+      xpNext: level * 400,
+      xpPct: Math.min(100, Math.round((xpInLevel / 400) * 100)),
+      steps,
+      allPoints,
+      donePoints,
+      pathHeight,
+
+      activeStep,
+      completeActiveStep: () => {
+        if (s.completedSteps.includes(activeBase.id)) return;
+        this.setState({ completedSteps: [...s.completedSteps, activeBase.id], screen: "roadmap" });
+      },
+
+      metrics,
+      zones,
+      metricLow: activeMetric.goodHigh ? "Baja" : "Bajo",
+      metricHigh: activeMetric.goodHigh ? "Alta" : "Alto",
+      metricGradient: activeMetric.goodHigh
+        ? "linear-gradient(90deg, #D97B3F, #E8DFC8, #1F6B4C)"
+        : "linear-gradient(90deg, #1F6B4C, #E8DFC8, #D97B3F)",
+      hasSelectedZone: !!selectedZone,
+      selectedZone: selectedZone || { name: "", demand: 0, supply: 0, cost: 0 },
+      clearZone: () => this.setState({ selectedZoneId: null }),
+
+      mentors: MENTORS.map((m) => ({ ...m, initial: m.name.charAt(0) })),
+      providers: PROVIDERS,
+      messages: MESSAGES,
+
+      providerSubmitted: s.providerSubmitted,
+      providerNotSubmitted: !s.providerSubmitted,
+      submitProvider: () => this.setState({ providerSubmitted: true }),
+    };
+  }
+}
+</script>
+</body>
+</html>
