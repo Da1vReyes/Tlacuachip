@@ -8,6 +8,13 @@ app.use(cors());
 
 const PORT = process.env.PORT || 4000;
 
+app.get("/", (_req, res) => {
+  res.json({
+    name: "tlacuachip-server",
+    endpoints: ["/api/health", "/api/density?lat=&lng=&category="],
+  });
+});
+
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
