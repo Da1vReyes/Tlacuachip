@@ -1,0 +1,190 @@
+# AGENTS.md
+
+Guide for anyone (human or AI) working on this repo. Read this before making
+changes — it explains how the pieces fit together and the conventions we're
+holding to so the codebase stays coherent as more people touch it.
+
+## What this is
+
+Tlacuachip: a web app that helps someone in Mexico/LatAm with an idea and a
+budget (from $50 to $500,000 MXN) turn it into a real business. Flow:
+
+1. **Landing → sign up/login** (`web/src/pages/Landing.tsx`, `Auth.tsx`)
+2. **Onboarding wizard** — one question at a time, game-like, not a form
+   (`web/src/pages/BusinessForm.tsx`)
+3. **Market report** with sector stats and sources (`Report.tsx`)
+4. **Heatmap** — real business density per zone from OpenStreetMap, blended
+   with estimated demand/cost (`Heatmap.tsx`)
+5. **Dashboard** — KPIs, revenue projection chart, budget breakdown, roadmap
+   progress, community feed (`Dashboard.tsx`)
+6. **Roadmap** — horizontal gamified timeline of steps to actually open the
+   business, each connecting to mentors/suppliers when relevant
+   (`Roadmap.tsx`, `StepDetail.tsx`)
+7. **Mentors / Marketplace / Community** — supporting screens
+
+## Repo layout
+
+```
+tlacuachip/
+├── web/                  React 19 + TypeScript + Vite
+│   ├── src/pages/         One file per screen/route
+│   ├── src/components/    AppShell (sidebar/topbar), icons.tsx (inline SVG set)
+│   ├── src/context/       AppContext — the one source of client state
+│   ├── src/hooks/         useCountUp, useCityCenter, useDensity
+│   ├── src/data/          Mock data generators (report, mentors, providers…)
+│   ├── src/types/         Shared TS types
+│   └── src/index.css      The entire design system (tokens + utility classes)
+├── server/                Node + Express, ESM, no build step
+│   └── src/
+│       ├── index.js       Routes
+│       ├── overpass.js    Overpass (OpenStreetMap) client
+│       ├── zones.js       3x3 zone-grid math, shared conceptually with web
+│       └── categories.js  Business category → OSM tag mapping
+└── design/                Source `.dc.html` for the click-through concept
+                            prototype (Claude Design canvas) — not part of
+                            the shipped app, keep for pitching/iterating.
+```
+
+There is no shared package between `web` and `server` yet — the zone grid
+(`ROW_OFFSET`/`COL_OFFSET`, 3×3 layout) is duplicated in
+`web/src/pages/Heatmap.tsx`, `web/src/pages/Dashboard.tsx`, and
+`server/src/zones.js`. **If you change the grid shape, change it in all
+three.** Worth extracting into a shared package if this survives past the
+hackathon (see Known gaps below).
+
+## Running it
+
+Two processes, no Docker, no build step for the API:
+
+```bash
+cd server && npm install && npm run dev   # http://localhost:4000
+cd web && npm install && npm run dev      # http://localhost:5173 (Vite picks a free port)
+```
+
+`web` talks to the API via `VITE_API_URL` (see `web/.env.example`), default
+`http://localhost:4000`. The app degrades gracefully if the API is down —
+the heatmap falls back to estimated (mock) supply numbers instead of real
+OpenStreetMap counts. Nothing else depends on the backend.
+
+Type-check and lint before pushing:
+
+```bash
+cd web && npx tsc --noEmit && npm run lint
+```
+
+There's no test suite yet (hackathon timeline). If you add non-trivial logic
+(scoring formulas, data merging), consider adding one — see Known gaps.
+
+## State & data flow
+
+- **`AppContext`** (`web/src/context/AppContext.tsx`) is the only client
+  state: `user`, `businessForm`, `report`, `progress` (level/XP/completed
+  steps), all persisted to `localStorage` under one JSON key. Read/write it
+  through `useApp()` — don't reach into `localStorage` directly from a page.
+- **Report + heatmap data is mock**, generated deterministically from the
+  business form (`web/src/data/mockData.ts`) — same input always produces
+  the same numbers, so it's not random noise, but it isn't real market data
+  either. Say so if it comes up in a demo or pitch.
+- **Heatmap "oferta" (supply) is real**, sourced live from OpenStreetMap via
+  `server/src/overpass.js` → `GET /api/density`. Demand and cost are still
+  estimated. This is the one number in the app you can defend as not made
+  up — see the credibility discussion this repo grew out of.
+- Routing is `HashRouter` (`react-router-dom`) — URLs look like
+  `/#/roadmap`. That's deliberate: it means `web/` can be deployed as a
+  static site with zero server-side routing config.
+
+## Design system
+
+Everything lives in `web/src/index.css` as CSS custom properties + utility
+classes — there's no component library, no Tailwind, no CSS-in-JS. The
+palette and type scale were lifted from a real open-source dashboard
+([nellavio](https://github.com/nellavio/nellavio)) rather than invented:
+`Outfit` font, `rounded-xl` cards (`--radius: 12px`), accent blue
+(`--accentBlue: #3870e3`), the `--cardShadow` value. If you add a new color
+or spacing value, check `index.css` first — it's probably already a token.
+
+Icons are hand-drawn inline SVG in `web/src/components/icons.tsx`
+(stroke-based, 24×24 viewBox, `currentColor`). **No emoji, no icon-font
+libraries** — stay consistent with the existing set when adding one.
+
+Motion conventions (also in `index.css`):
+- `.page-enter` — fade+slide on route change (wired once in `AppShell`,
+  you don't need to add it per page)
+- `.stagger > *` — staggered fade-in for list/grid children
+- `.card-hover`, `.card-clickable` — lift-on-hover for interactive cards
+- `.pop-in` — ease-out-quint pop for things appearing after a user action
+  (no bounce/elastic easing — it reads as dated; we specifically fixed this
+  once, don't reintroduce `cubic-bezier(0.34, 1.56, ...)`-style overshoot)
+
+## Conventions
+
+- **TypeScript, strict**: `web` is typed end-to-end. `npx tsc --noEmit` must
+  pass before you push. The `server` is plain ESM JS by choice (hackathon
+  speed) — keep it small enough that this stays fine, or migrate it to TS if
+  it grows real business logic.
+- **Redirects belong in `useEffect`, never in the render body.** Don't do
+  `if (!ready) { navigate(...); return null; }` directly in a component —
+  calling `navigate()` during render is a real bug (React warns
+  "Cannot update a component while rendering a different component") and
+  breaks under concurrent rendering. Pattern to follow, used throughout
+  `web/src/pages/`:
+  ```tsx
+  useEffect(() => {
+    if (!ready) navigate("/formulario", { replace: true });
+  }, [ready, navigate]);
+
+  if (!ready) return null;
+  ```
+- **No stale closures in delayed callbacks.** If a handler does
+  `setSomething(value)` and then needs to act on that value shortly after
+  (e.g. `setTimeout(..., 220)` for an auto-advance animation), pass `value`
+  explicitly into the delayed function — don't read it back off state,
+  which is still the pre-update value in that closure. See
+  `web/src/pages/BusinessForm.tsx` (`submitForm(exp, cat)`) for the fixed
+  pattern; this bit us once already.
+- **Animate `transform`/`opacity`, not layout properties.** Progress bars
+  animate `transform: scaleX(...)` on a full-width element, not `width` —
+  keeps them off the main thread's layout pass. Follow this for any new
+  progress/loading indicator.
+- Inline `style={{}}` is used deliberately for anything data-driven
+  (colors computed from a score, positions computed from a grid). Static,
+  reusable styling goes in `index.css` as a class instead.
+
+## Known lint warnings (reviewed, intentionally left)
+
+Running `npm run lint` in `web/` surfaces a handful of `oxlint`
+`react(set-state-in-effect)` warnings in `useCityCenter.ts`, `useDensity.ts`,
+`Heatmap.tsx`, and `AppContext.tsx`, plus one `react(only-export-components)`
+in `AppContext.tsx`. These are the standard "fetch/hydrate in an effect, set
+loading state, setState on resolution" and "context file exports both the
+Provider and its `useX` hook" patterns — both are idiomatic React, not bugs.
+Don't "fix" these by moving fetches into render or splitting the context
+file unless you have a concrete reason; they're flagged, not broken.
+
+## Known gaps / next steps
+
+- **Demand and cost in the heatmap are still estimated**, not real. Next
+  highest-value data source: INEGI/DENUE (Mexico's business census) for
+  actual formal-sector business counts and sector growth, replacing
+  `generateMockReport` in `web/src/data/mockData.ts`.
+- **No auth backend** — "login" just stores a name/email in `localStorage`.
+  Fine for a demo, not for anything real.
+- **No tests.** Priority if this continues: the scoring math
+  (`opportunityFrom` in `Heatmap.tsx`, `scoreFromCount` in
+  `server/src/zones.js`) and the zone-bucketing geometry, since those are
+  easy to silently break.
+- **Zone grid is duplicated** across `web` and `server` (see Repo layout) —
+  extract to a shared package if this grows past hackathon scope.
+- `server` has no persistence or auth — it's a stateless proxy in front of
+  Overpass with an in-memory cache (10 min TTL). Fine for a demo; add a real
+  cache/store before relying on it for anything with sustained traffic —
+  Overpass's public instance rate-limits aggressively.
+
+## Contributing
+
+- Branch off `main`, open a PR, keep commits scoped (one concern per
+  commit) — this repo is being actively demoed, so `main` should always run.
+- If you touch `web/src/index.css`, check you're not duplicating an
+  existing token first.
+- If you touch the zone grid or scoring formulas, update this file's
+  "Known gaps" section if the gap you were closing is listed above.

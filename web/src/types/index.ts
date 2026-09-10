@@ -1,0 +1,120 @@
+export interface User {
+  email: string;
+  name?: string;
+}
+
+export type BusinessCategory =
+  | "cafeteria"
+  | "restaurante"
+  | "tienda-abarrotes"
+  | "salon-belleza"
+  | "taller-mecanico"
+  | "papeleria"
+  | "otro";
+
+export interface BusinessFormData {
+  businessType: string;
+  category: BusinessCategory;
+  budget: number;
+  location: {
+    country: "Mexico" | "Colombia" | "Argentina" | "Chile" | "Peru" | "Otro";
+    state: string;
+    city: string;
+  };
+  experience: "ninguna" | "poca" | "intermedia" | "experto";
+}
+
+export interface ReportSource {
+  name: string;
+  publisher: string;
+  year: number;
+  url: string;
+}
+
+export interface ReportData {
+  sectorGrowthPercent: number;
+  sectorGrowthPeriod: string;
+  localBusinessCount: number;
+  avgMonthlyRevenue: number;
+  survivalRate5Years: number;
+  demandTrend: "creciendo" | "estable" | "decreciendo";
+  insights: string[];
+  sources: ReportSource[];
+}
+
+export type StepStatus = "locked" | "available" | "in-progress" | "completed";
+
+export type StepCategory = "legal" | "mentoria" | "finanzas" | "marketing" | "operaciones" | "escalamiento";
+
+export interface RoadmapStep {
+  id: string;
+  level: number;
+  title: string;
+  description: string;
+  category: StepCategory;
+  status: StepStatus;
+  xp: number;
+  detail: StepDetail;
+}
+
+export interface StepDetail {
+  summary: string;
+  instructions: string[];
+  officialLink?: { label: string; url: string };
+  hasCost: boolean;
+  estimatedCost?: string;
+  canDoOnline: boolean;
+  connectTo?: ("mentores" | "proveedores")[];
+}
+
+export interface Mentor {
+  id: string;
+  name: string;
+  expertise: string;
+  businessesOpened: number;
+  location: string;
+  rating: number;
+  avatarColor: string;
+}
+
+export interface Provider {
+  id: string;
+  name: string;
+  category: string;
+  type: "producto" | "servicio";
+  location: string;
+  rating: number;
+  description: string;
+}
+
+export interface CommunityMessage {
+  id: string;
+  author: string;
+  location: string;
+  businessType: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface ZoneMetrics {
+  id: string;
+  name: string;
+  row: number;
+  col: number;
+  supply: number; // 0-100: cuántos negocios similares ya existen (más alto = más saturado)
+  demand: number; // 0-100: qué tanta gente busca este tipo de negocio
+  cost: number; // 0-100: costo relativo de renta/operación
+  opportunityScore: number; // 0-100: derivado de demanda alta, oferta baja, costo manejable
+}
+
+export interface HeatmapData {
+  centerLabel: string;
+  zones: ZoneMetrics[];
+}
+
+export interface UserProgress {
+  level: number;
+  xp: number;
+  completedSteps: string[];
+  lastActiveAt: string;
+}
