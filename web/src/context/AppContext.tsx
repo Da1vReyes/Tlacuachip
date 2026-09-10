@@ -42,26 +42,42 @@ function unlockNextSteps(steps: RoadmapStep[], completedSteps: string[]): Roadma
   return result;
 }
 
-export function AppProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [businessForm, setBusinessForm] = useState<BusinessFormData | null>(null);
-  const [report, setReport] = useState<ReportData | null>(null);
-  const [progress, setProgress] = useState<UserProgress>(defaultProgress);
+interface Persisted {
+  user: User | null;
+  businessForm: BusinessFormData | null;
+  report: ReportData | null;
+  progress: UserProgress;
+}
 
-  useEffect(() => {
+// Read synchronously during the first render (via useState's lazy
+// initializer) instead of in an effect. Loading this in an effect meant
+// guarded pages (Dashboard, Report, Heatmap, StepDetail) would run their
+// "redirect if no data" check on the FIRST render, before this had a
+// chance to populate — which bounced a reload straight to /formulario
+// even when localStorage had everything. Reading it up front makes the
+// first render already correct, so there's nothing to race.
+function loadPersisted(): Persisted {
+  try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (parsed.user) setUser(parsed.user);
-        if (parsed.businessForm) setBusinessForm(parsed.businessForm);
-        if (parsed.report) setReport(parsed.report);
-        if (parsed.progress) setProgress(parsed.progress);
-      } catch {
-        // ignore corrupted storage
-      }
-    }
-  }, []);
+    if (!raw) return { user: null, businessForm: null, report: null, progress: defaultProgress };
+    const parsed = JSON.parse(raw);
+    return {
+      user: parsed.user ?? null,
+      businessForm: parsed.businessForm ?? null,
+      report: parsed.report ?? null,
+      progress: parsed.progress ?? defaultProgress,
+    };
+  } catch {
+    return { user: null, businessForm: null, report: null, progress: defaultProgress };
+  }
+}
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  const [persisted] = useState(loadPersisted);
+  const [user, setUser] = useState<User | null>(persisted.user);
+  const [businessForm, setBusinessForm] = useState<BusinessFormData | null>(persisted.businessForm);
+  const [report, setReport] = useState<ReportData | null>(persisted.report);
+  const [progress, setProgress] = useState<UserProgress>(persisted.progress);
 
   useEffect(() => {
     localStorage.setItem(
