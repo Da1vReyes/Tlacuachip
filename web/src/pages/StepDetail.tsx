@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { providers } from "../data/mockData";
+import { providerKindLabel } from "../lib/matching";
 
 export default function StepDetail() {
   const { stepId } = useParams();
   const navigate = useNavigate();
-  const { steps, completeStep } = useApp();
+  const { steps, completeStep, team, toggleTeamProvider } = useApp();
   const [evidenceByStep, setEvidenceByStep] = useState<Record<string, string[]>>({});
 
   const step = steps.find((s) => s.id === stepId);
@@ -24,6 +26,10 @@ export default function StepDetail() {
   const shareUrl = `${window.location.origin}/#/roadmap`;
   const shareText = `Completé “${step.title}” en mi ruta de formalización de Tlacuachip. Sigo construyendo mi negocio paso a paso.`;
   const statusLabel = step.detail.applicability === "base" ? "Paso base" : step.detail.applicability === "conditional" ? "Según tu giro" : "Recomendado al crecer";
+  const stepProviders = providers
+    .filter((p) => p.helpsWith.includes(step.id))
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 3);
 
   const toggleEvidence = (item: string) => {
     setEvidenceByStep((current) => {
@@ -115,19 +121,41 @@ export default function StepDetail() {
         ))}
       </div>
 
-      {step.detail.connectTo && step.detail.connectTo.length > 0 && (
-        <div className="stack">
-          {step.detail.connectTo.includes("mentores") && (
-            <button className="btn btn-secondary" onClick={() => navigate("/mentores")}>
-              Conectar con mentores
-            </button>
-          )}
-          {step.detail.connectTo.includes("proveedores") && (
-            <button className="btn btn-secondary" onClick={() => navigate("/marketplace")}>
-              Ver proveedores
-            </button>
-          )}
+      {stepProviders.length > 0 && (
+        <div className="card stack" style={{ gap: 10 }}>
+          <div className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+            <h2>Quién puede ayudarte con este paso</h2>
+            <button className="btn btn-ghost" style={{ padding: 0 }} onClick={() => navigate("/equipo")}>Ver todo mi equipo</button>
+          </div>
+          <p className="muted" style={{ fontSize: 13 }}>Profesionales que se registraron para atender exactamente este paso. La decisión y el contacto siguen siendo tuyos.</p>
+          <div className="stack" style={{ gap: 8 }}>
+            {stepProviders.map((p) => {
+              const inTeam = team.includes(p.id);
+              return (
+                <div key={p.id} className="row" style={{ justifyContent: "space-between", alignItems: "flex-start", gap: 12, paddingTop: 8, borderTop: "1px solid var(--mainBorder)" }}>
+                  <div className="stack" style={{ gap: 3, flex: 1 }}>
+                    <div className="row" style={{ gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                      <strong style={{ fontSize: 13 }}>{p.name}</strong>
+                      <span className="pill">{providerKindLabel[p.kind]}</span>
+                      {p.isAI && <span className="pill pill-warn">Agente de IA</span>}
+                    </div>
+                    <span className="muted" style={{ fontSize: 12.5 }}>{p.description}</span>
+                    <span className="muted" style={{ fontSize: 12 }}>{p.location} · ★ {p.rating}</span>
+                  </div>
+                  <button className={`btn ${inTeam ? "btn-secondary" : "btn-primary"}`} style={{ whiteSpace: "nowrap" }} onClick={() => toggleTeamProvider(p.id)}>
+                    {inTeam ? "En mi equipo" : "Guardar"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
+      )}
+
+      {step.detail.connectTo?.includes("mentores") && (
+        <button className="btn btn-secondary" onClick={() => navigate("/mentores")}>
+          Conectar con mentores
+        </button>
       )}
 
       <button

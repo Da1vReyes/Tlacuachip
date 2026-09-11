@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { BusinessCategory } from "../types";
-
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+import { API_BASE } from "../lib/api";
 
 export interface DensityZone {
   id: string;

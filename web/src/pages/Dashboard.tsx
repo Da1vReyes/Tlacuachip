@@ -14,8 +14,10 @@ import { useApp } from "../context/AppContext";
 import { generateMockHeatmap } from "../data/mockData";
 import { useCityCenter } from "../hooks/useCityCenter";
 import { useCountUp } from "../hooks/useCountUp";
-import { IconTrendUp, IconRoute, IconChat, IconMap } from "../components/icons";
-import { communityMessages } from "../data/mockData";
+import { IconTrendUp, IconRoute, IconChat, IconMap, IconUsers } from "../components/icons";
+import { communityMessages, providers } from "../data/mockData";
+import { buildMinimizedProfile } from "../lib/privacy";
+import { providerKindLabel, rankProviders } from "../lib/matching";
 
 const ROW_OFFSET = [-0.011, 0, 0.011];
 const COL_OFFSET = [-0.014, 0, 0.014];
@@ -75,6 +77,7 @@ export default function Dashboard() {
   }
 
   const completedCount = steps.filter((s) => s.status === "completed").length;
+  const teamPicks = rankProviders(buildMinimizedProfile(businessForm, preferences, steps), providers, steps).slice(0, 3);
   const bestZone = heatmap ? [...heatmap.zones].sort((a, b) => b.opportunityScore - a.opportunityScore)[0] : null;
   const zonePositions =
     center && heatmap
@@ -262,6 +265,30 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {teamPicks.length > 0 && (
+        <div className="card stack" style={{ gap: 10 }}>
+          <div className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+            <div className="row" style={{ alignItems: "center", gap: 6 }}>
+              <IconUsers size={15} />
+              <h2>Tu equipo para el siguiente paso</h2>
+            </div>
+            <button className="btn btn-ghost" onClick={() => navigate("/equipo")}>Ver recomendación completa</button>
+          </div>
+          <div className="grid-3 stagger">
+            {teamPicks.map(({ provider, reason }) => (
+              <div key={provider.id} className="stack" style={{ gap: 4, paddingTop: 8, borderTop: "1px solid var(--mainBorder)" }}>
+                <div className="row" style={{ gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                  <strong style={{ fontSize: 13 }}>{provider.name}</strong>
+                  <span className="pill">{providerKindLabel[provider.kind]}</span>
+                  {provider.isAI && <span className="pill pill-warn">IA</span>}
+                </div>
+                <span className="muted" style={{ fontSize: 12.5 }}>{reason}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="card stack">
         <h2>Lo que dicen los datos de tu sector</h2>

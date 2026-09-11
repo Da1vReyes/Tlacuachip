@@ -28,7 +28,7 @@ export default function Landing() {
           <div className="landing-hero-copy landing-enter">
             <h1>No tienes que saberlo todo para empezar bien.</h1>
             <p className="landing-lede">Una idea y ganas de emprender deberían ser suficientes para dar el primer paso. Tlacuachip te ayuda a descubrir qué necesitas revisar antes de invertir tu dinero.</p>
-            <div className="landing-actions"><button className="btn btn-primary landing-cta" onClick={start}>Quiero emprender</button><span>Sin costo en este prototipo · toma cerca de 4 minutos</span></div>
+            <div className="landing-actions"><button className="btn btn-primary landing-cta" onClick={start}>Quiero emprender</button><button className="btn btn-secondary landing-cta" onClick={() => navigate("/auth?role=provider")}>Ofrezco servicios</button><span>Sin costo en este prototipo · toma cerca de 4 minutos</span></div>
           </div>
           <aside className="landing-preview landing-enter" aria-label="Vista previa del análisis">
             <div className="landing-preview-head"><span>Una decisión, tres lecturas</span><span>Tu ciudad</span></div>
@@ -63,8 +63,17 @@ export default function Landing() {
         </section>
 
         <section id="red" className="landing-section landing-network">
-          <div><h2>Cuando haga falta, no avances solo.</h2><p>El camino conecta cada necesidad con recursos oficiales, personas que ya abrieron negocios parecidos y proveedores que entienden el giro.</p><button className="btn btn-secondary landing-provider-cta" onClick={() => navigate("/proveedor/nuevo")}>Ofrezco servicios o productos</button></div>
-          <div className="landing-network-list"><span><IconUsers size={18} /> Mentores con experiencia práctica</span><span><IconRoute size={18} /> Trámites y pasos explicados sin tecnicismos</span><span><IconChart size={18} /> Presupuesto y señales para revisar antes de invertir</span><small>Los proveedores pueden crear un perfil para aparecer cuando su servicio sea relevante para un negocio.</small></div>
+          <div><h2>Cuando haga falta, no avances solo.</h2><p>Cada paso de la ruta te muestra qué abogado, contador, asesor financiero, agencia de marketing (humana o de IA) o gestoría se registró para atender exactamente ese paso, en tu ciudad. La IA arma la lista; tú decides a quién contactar.</p><button className="btn btn-secondary landing-provider-cta" onClick={() => navigate("/auth?role=provider")}>Ofrezco servicios o productos</button></div>
+          <div className="landing-network-list"><span><IconUsers size={18} /> Profesionales sugeridos por paso, no por anuncio</span><span><IconRoute size={18} /> Trámites y pasos explicados sin tecnicismos</span><span><IconChart size={18} /> Presupuesto y señales para revisar antes de invertir</span><small>Los proveedores crean un perfil y aparecen solo cuando su servicio es relevante para el paso en que está un negocio. Siempre verás si hablas con una persona o con un agente de IA.</small></div>
+        </section>
+
+        <section className="landing-section landing-model">
+          <div><h2>Cómo nos sostenemos, sin vender tus datos.</h2><p>Dos fuentes de ingreso y ninguna es tu información. Lo escribimos aquí para que puedas exigírnoslo.</p></div>
+          <div className="landing-model-list">
+            <div><b>01</b><div><strong>Suscripción de proveedores</strong><p>Quien ofrece servicios paga por aparecer en la red frente a emprendedores que ya están en el paso donde lo necesitan.</p></div></div>
+            <div><b>02</b><div><strong>Comisión por acuerdos cerrados</strong><p>Solo cuando un emprendedor y un proveedor cierran un trato dentro de la plataforma. Si no hay trato, no hay cobro.</p></div></div>
+            <div><b>03</b><div><strong>Cero venta de datos</strong><p>Tu perfil no es una mercancía: no se vende, no alimenta publicidad y la IA solo recibe lo que tú elegiste compartir. Lo puedes ver y borrar cuando quieras.</p></div></div>
+          </div>
         </section>
 
         <section className="landing-final"><h2>Empieza por conocer tu zona.</h2><p>Después conviertes esa lectura en un camino para abrir, validar y hacer crecer tu negocio.</p><button className="btn btn-primary landing-cta" onClick={start}>Comenzar ahora</button></section>

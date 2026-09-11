@@ -1,6 +1,27 @@
+export type UserRole = "entrepreneur" | "provider";
+
 export interface User {
   email: string;
   name?: string;
+  role?: UserRole;
+}
+
+export type ProviderKind = "abogado" | "contador" | "asesor-financiero" | "marketing" | "gestoria" | "insumos";
+
+export interface ProviderProfile {
+  name: string;
+  kind: ProviderKind;
+  isAI?: boolean;
+  city: string;
+  country: string;
+  description: string;
+  helpsWith: string[];
+}
+
+export interface TeamRecommendation {
+  providerId: string;
+  reason: string;
+  forStepId?: string;
 }
 
 export type BusinessCategory =
@@ -94,11 +115,15 @@ export interface Mentor {
 export interface Provider {
   id: string;
   name: string;
+  kind: ProviderKind;
+  isAI?: boolean;
   category: string;
   type: "producto" | "servicio";
   location: string;
+  city: string;
   rating: number;
   description: string;
+  helpsWith: string[];
 }
 
 export interface CommunityMessage {
