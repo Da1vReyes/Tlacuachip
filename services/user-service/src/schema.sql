@@ -116,9 +116,16 @@ CREATE TABLE IF NOT EXISTS tlacuachic_preferences (
   location_precision  TEXT NOT NULL DEFAULT 'city' CHECK (location_precision IN ('city', 'zone')),
   onboarding_complete BOOLEAN NOT NULL DEFAULT false,
   selected_zone_id    TEXT,
+  selected_lat        DOUBLE PRECISION,
+  selected_lng        DOUBLE PRECISION,
+  selected_location_label TEXT,
   location_mode       TEXT CHECK (location_mode IS NULL OR location_mode IN ('explore', 'existing')),
   tutorial_seen       BOOLEAN NOT NULL DEFAULT false
 );
+
+ALTER TABLE tlacuachic_preferences ADD COLUMN IF NOT EXISTS selected_lat DOUBLE PRECISION;
+ALTER TABLE tlacuachic_preferences ADD COLUMN IF NOT EXISTS selected_lng DOUBLE PRECISION;
+ALTER TABLE tlacuachic_preferences ADD COLUMN IF NOT EXISTS selected_location_label TEXT;
 
 CREATE TABLE IF NOT EXISTS tlacuachic_provider_profiles (
   user_id     UUID PRIMARY KEY REFERENCES tlacuachic_users(id) ON DELETE CASCADE,

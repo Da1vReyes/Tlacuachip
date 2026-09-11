@@ -10,8 +10,8 @@ export default function Mentors() {
   return (
     <div className="stack" style={{ gap: 20 }}>
       <div className="stack" style={{ gap: 4 }}>
-        <h1>Mentores para ti</h1>
-        <p>Personas que ya recorrieron este camino y pueden guiarte.</p>
+        <h1>Habla con alguien que ya recorrió este camino</h1>
+        <p>Encuentra una perspectiva práctica antes de decidir tu siguiente paso.</p>
       </div>
 
       <div className="grid-2">
@@ -36,9 +36,7 @@ export default function Mentors() {
             <div className="stack" style={{ gap: 2, flex: 1 }}>
               <span style={{ fontWeight: 700, fontSize: 14 }}>{m.name}</span>
               <span className="muted">{m.expertise}</span>
-              <span className="muted">
-                {m.location} · {m.businessesOpened} negocios · ★ {m.rating}
-              </span>
+              <span className="muted">{m.location}</span>
               {(() => { const provider = catalogProviders.find((p) => p.name === m.name); return provider && (contacting === m.id ? <div className="stack" style={{ gap: 7, marginTop: 8 }}><textarea rows={2} maxLength={1200} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="¿Qué te gustaría conversar?" /><div className="row" style={{ gap: 8 }}><button className="btn btn-primary" disabled={!message.trim()} onClick={() => send(provider.id)}>Solicitar conversación</button><button className="btn btn-ghost" onClick={() => setContacting(null)}>Cancelar</button></div></div> : <button className="btn btn-secondary" style={{ width: "fit-content", marginTop: 8 }} onClick={() => { setContacting(m.id); setNotice(null); }}>Hablar con mentor</button>); })()}
             </div>
           </div>

@@ -1,6 +1,6 @@
 import type { BusinessFormData, DataPreferences, ProviderProfile, ReportData, User, UserProgress } from "../types";
 
-export const USER_API_BASE = import.meta.env.VITE_USER_SERVICE_URL ?? "http://localhost:4100";
+export const USER_API_BASE = import.meta.env.VITE_USER_SERVICE_URL ?? (import.meta.env.PROD ? "" : "http://localhost:4100");
 
 export class ApiError extends Error {
   status: number;
@@ -62,6 +62,9 @@ interface ServerPreferences {
   location_precision: DataPreferences["locationPrecision"];
   onboarding_complete: boolean;
   selected_zone_id: string | null;
+  selected_lat: number | null;
+  selected_lng: number | null;
+  selected_location_label: string | null;
   location_mode: DataPreferences["locationMode"] | null;
   tutorial_seen: boolean;
 }
@@ -117,6 +120,7 @@ export function toClientPreferences(p: ServerPreferences): DataPreferences {
     locationPrecision: p.location_precision,
     onboardingComplete: p.onboarding_complete,
     selectedZoneId: p.selected_zone_id ?? undefined,
+    selectedLocation: p.selected_lat !== null && p.selected_lng !== null ? { lat: Number(p.selected_lat), lng: Number(p.selected_lng), label: p.selected_location_label ?? undefined } : undefined,
     locationMode: p.location_mode ?? undefined,
     tutorialSeen: p.tutorial_seen,
   };

@@ -89,6 +89,16 @@ export function validatePreferences(input) {
   if (input?.selectedZoneId !== undefined) {
     patch.selectedZoneId = str(input.selectedZoneId, 20, "selectedZoneId") ?? null;
   }
+  if (input?.selectedLocation !== undefined) {
+    if (input.selectedLocation === null) {
+      patch.selectedLat = null; patch.selectedLng = null; patch.selectedLocationLabel = null;
+    } else {
+      const lat = Number(input.selectedLocation?.lat); const lng = Number(input.selectedLocation?.lng);
+      if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) throw new ValidationError("selectedLocation is invalid");
+      patch.selectedLat = lat; patch.selectedLng = lng;
+      patch.selectedLocationLabel = str(input.selectedLocation?.label, 160, "selectedLocation.label") ?? null;
+    }
+  }
   if (input?.locationMode !== undefined) {
     if (input.locationMode !== null && !LOCATION_MODES.has(input.locationMode)) throw new ValidationError("locationMode is invalid");
     patch.locationMode = input.locationMode;

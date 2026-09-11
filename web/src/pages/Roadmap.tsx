@@ -2,6 +2,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState, type ComponentType } from "react";
 import { useApp } from "../context/AppContext";
 import { IconCheck, IconLock, IconForm, IconUsers, IconChart, IconChat, IconBag, IconRoute } from "../components/icons";
+import { postJson } from "../lib/api";
+
+type RoadmapReview = { source: "llm" | "fallback"; model: string | null; strengths: string; watchout: string; nextFocus: string };
 
 const categoryIcon: Record<string, ComponentType<{ size?: number }>> = {
   legal: IconForm,
@@ -35,6 +38,8 @@ export default function Roadmap() {
   const { steps, progress, businessForm } = useApp();
   const completedStepId = (location.state as { completedStepId?: string } | null)?.completedStepId;
   const [celebrating, setCelebrating] = useState(Boolean(completedStepId));
+  const [review, setReview] = useState<RoadmapReview | null>(null);
+  const [reviewing, setReviewing] = useState(false);
 
   useEffect(() => {
     if (!completedStepId) return;
@@ -50,6 +55,18 @@ export default function Roadmap() {
   const xpProgress = Math.min(100, Math.round((progress.xp % 400) / 4));
   const startX = 90;
   const timelineWidth = Math.max((steps.length - 1) * nodeGap + startX * 2, 720);
+  const reviewProgress = async () => {
+    if (!businessForm) return;
+    setReviewing(true);
+    try {
+      setReview(await postJson<RoadmapReview>("/api/roadmap-review", {
+        profile: { businessType: businessForm.businessType, city: businessForm.location.city, experience: businessForm.experience, description: businessForm.description ?? "" },
+        steps: steps.map(({ title, status }) => ({ title, status })),
+      }));
+    } catch {
+      setReview({ source: "fallback", model: null, strengths: completedBaseSteps ? `Ya registraste ${completedBaseSteps} pasos base.` : "Aún no has cerrado pasos base.", watchout: "Tu progreso no sustituye una confirmación oficial.", nextFocus: "Completa sólo el siguiente paso disponible y guarda evidencia." });
+    } finally { setReviewing(false); }
+  };
 
   if (!isMexico) {
     return (
@@ -91,6 +108,14 @@ export default function Roadmap() {
           <span className="muted" style={{ fontSize: 12 }}>confirma siempre con fuentes oficiales</span>
         </div>
       </div>
+
+      <section className="card stack" style={{ gap: 10 }}>
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div><span className="step-resource-kicker">Lectura de avance</span><h2 style={{ margin: "4px 0" }}>Qué vas haciendo bien y qué revisar</h2><p className="muted" style={{ fontSize: 13, margin: 0 }}>Una crítica breve basada en tu perfil y los pasos que ya cerraste.</p></div>
+          <button className="btn btn-secondary" disabled={reviewing} onClick={reviewProgress}>{reviewing ? "Revisando…" : "Analizar mi avance"}</button>
+        </div>
+        {review && <div className="grid-3" role="status"><div className="stack" style={{ gap: 4 }}><span className="muted" style={{ fontSize: 12 }}>Vas bien en</span><strong style={{ fontSize: 14 }}>{review.strengths}</strong></div><div className="stack" style={{ gap: 4 }}><span className="muted" style={{ fontSize: 12 }}>Ojo con</span><strong style={{ fontSize: 14 }}>{review.watchout}</strong></div><div className="stack" style={{ gap: 4 }}><span className="muted" style={{ fontSize: 12 }}>Siguiente enfoque</span><strong style={{ fontSize: 14 }}>{review.nextFocus}</strong></div></div>}
+      </section>
 
       <div className="card" style={{ overflowX: "auto", overflowY: "hidden" }}>
         <div style={{ position: "relative", width: timelineWidth, height: timelineHeight, margin: "0 auto" }}>

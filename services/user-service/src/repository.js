@@ -137,6 +137,9 @@ const DEFAULT_PREFERENCES = {
   location_precision: "city",
   onboarding_complete: false,
   selected_zone_id: null,
+  selected_lat: null,
+  selected_lng: null,
+  selected_location_label: null,
   location_mode: null,
   tutorial_seen: false,
 };
@@ -160,6 +163,9 @@ export async function updatePreferences(userId, patch) {
     locationPrecision: "location_precision",
     onboardingComplete: "onboarding_complete",
     selectedZoneId: "selected_zone_id",
+    selectedLat: "selected_lat",
+    selectedLng: "selected_lng",
+    selectedLocationLabel: "selected_location_label",
     locationMode: "location_mode",
     tutorialSeen: "tutorial_seen",
   };
