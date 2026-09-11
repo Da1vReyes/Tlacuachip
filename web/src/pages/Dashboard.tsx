@@ -1,20 +1,10 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
 import { MapContainer, TileLayer, CircleMarker } from "react-leaflet";
 import { useApp } from "../context/AppContext";
 import { useCityCenter } from "../hooks/useCityCenter";
 import { useDensity } from "../hooks/useDensity";
-import { useCountUp } from "../hooks/useCountUp";
-import { IconTrendUp, IconRoute, IconChat, IconMap, IconUsers, IconHelp } from "../components/icons";
+import { IconRoute, IconChat, IconMap, IconUsers, IconHelp } from "../components/icons";
 import { buildMinimizedProfile } from "../lib/privacy";
 import { providerKindLabel, rankProviders } from "../lib/matching";
 
@@ -23,32 +13,11 @@ const COL_OFFSET = [-0.014, 0, 0.014];
 
 function supplyColor(value: number) { return value >= 72 ? "#c8583a" : value >= 54 ? "#e09b4c" : value >= 36 ? "#e0c76a" : "#92ad94"; }
 
-function KpiValue({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) {
-  const animated = useCountUp(value);
-  return (
-    <span className="kpi-value">
-      {prefix}
-      {animated.toLocaleString()}
-      {suffix}
-    </span>
-  );
-}
-
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { businessForm, report, steps, progress, preferences, savePreferences, catalogProviders: providers } = useApp();
-  const { center } = useCityCenter(businessForm);
+  const { businessForm, report, steps, preferences, savePreferences, catalogProviders: providers } = useApp();
+  const { center } = useCityCenter(businessForm, preferences.selectedLocation);
   const { data: density } = useDensity(center, businessForm?.category ?? null);
-
-  const revenueSeries = useMemo(() => {
-    if (!report) return [];
-    const base = report.avgMonthlyRevenue * 0.55;
-    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-    return months.map((m, i) => ({
-      month: m,
-      ingreso: Math.round(base + (report.avgMonthlyRevenue - base) * Math.min(1, i / 8) + Math.sin(i) * base * 0.06),
-    }));
-  }, [report]);
 
   const ready = Boolean(businessForm && report);
 
@@ -89,8 +58,8 @@ export default function Dashboard() {
 
       <div className="stack" style={{ gap: 4 }}>
         <span className="pill">{businessForm.location.city}, {businessForm.location.state}</span>
-        <h1>Centro de lanzamiento: {businessForm.businessType}</h1>
-        <p>Una lectura operable de tu mercado, formalización y red. Empieza por la acción que mueve tu negocio hoy.</p>
+        <h1>{businessForm.businessType}</h1>
+        <p>Tu negocio tiene un solo foco ahora: completar el siguiente paso con la información y las personas que necesites.</p>
       </div>
 
       <section className="launch-command-center" aria-label="Estado de lanzamiento">
@@ -110,79 +79,6 @@ export default function Dashboard() {
         </div>
         <div className="launch-evidence"><span className="data-proof"><i />Evidencia activa</span><p><strong>Fuente de mercado:</strong> {density?.source === "inegi_denue_snapshot" ? "DENUE / INEGI, snapshot local de CDMX" : density ? "OpenStreetMap" : "cargando fuente"}. Lo que no está respaldado por fuente se marca como hipótesis, no como dato.</p></div>
       </section>
-
-      <div className="grid-4 stagger">
-        <div className="card card-hover">
-          <div className="muted">Ingreso mensual proyectado</div>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>
-            <KpiValue value={report.avgMonthlyRevenue} prefix="$" suffix=" MXN" />
-          </div>
-          <div className="row" style={{ alignItems: "center", gap: 4, marginTop: 4 }}>
-            <span style={{ color: "var(--success)" }}>
-              <IconTrendUp size={14} />
-            </span>
-            <span className="muted">+{report.sectorGrowthPercent}% sector</span>
-          </div>
-        </div>
-        <div className="card card-hover">
-          <div className="muted">Negocios similares</div>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>
-            <KpiValue value={report.localBusinessCount} />
-          </div>
-          <div className="muted" style={{ marginTop: 4 }}>en tu zona</div>
-        </div>
-        <div className="card card-hover">
-          <div className="muted">Sobrevive 5 años</div>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>
-            <KpiValue value={report.survivalRate5Years} suffix="%" />
-          </div>
-          <div className="muted" style={{ marginTop: 4 }}>tasa histórica del sector</div>
-        </div>
-        <div className="card card-hover">
-          <div className="muted">Tu progreso</div>
-          <div style={{ fontSize: 24, fontWeight: 700 }}>
-            <KpiValue value={completedCount} suffix={` / ${steps.length}`} />
-          </div>
-          <div className="muted" style={{ marginTop: 4 }}>pasos completados · Nivel {progress.level}</div>
-        </div>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 20, alignItems: "start" }}>
-        <div className="card">
-          <h2>Proyección de ingresos</h2>
-          <p style={{ marginBottom: 8 }}>Estimado mensual basado en tu presupuesto y el crecimiento del sector.</p>
-          <div style={{ width: "100%", height: 240 }}>
-            <ResponsiveContainer>
-              <AreaChart data={revenueSeries} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="revFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3870e3" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#3870e3" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.08)" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "rgba(0,0,0,0.5)" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "rgba(0,0,0,0.5)" }} axisLine={false} tickLine={false} width={48} />
-                <Tooltip
-              formatter={(v) => [`$${Number(v ?? 0).toLocaleString()} MXN`, "Ingreso"]}
-                  contentStyle={{ borderRadius: 10, border: "1px solid var(--cardBorder)", fontSize: 12.5 }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="ingreso"
-                  stroke="#3870e3"
-                  strokeWidth={2.5}
-                  fill="url(#revFill)"
-                  animationDuration={900}
-                  animationEasing="ease-out"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="card stack"><h2>Tu presupuesto inicial</h2><p>No repartimos tu dinero con porcentajes inventados. Cuando tengas cotizaciones reales, aquí podrás compararlas contra tu presupuesto de ${businessForm.budget.toLocaleString()} MXN.</p><button className="btn btn-secondary" onClick={() => navigate("/equipo")}>Buscar apoyo financiero</button></div>
-      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20, alignItems: "start" }}>
         <button type="button" className="card card-clickable card-button" style={{ padding: 0, overflow: "hidden" }} onClick={() => navigate("/mapa-calor")}>
@@ -273,16 +169,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="card stack">
-        <h2>Lo que dicen los datos de tu sector</h2>
-        <div className="grid-3 stagger" style={{ marginTop: 4 }}>
-          {report.insights.map((insight, i) => (
-            <div key={i} className="card" style={{ background: "var(--secondaryBg)", boxShadow: "none" }}>
-              <p style={{ color: "var(--primaryText)" }}>{insight}</p>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

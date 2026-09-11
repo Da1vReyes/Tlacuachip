@@ -20,14 +20,20 @@ const app = express();
 
 // Only the web app's origins may call this API from a browser. Requests
 // without an Origin header (curl, server-to-server) are still allowed.
+// Any localhost/127.0.0.1 origin is allowed regardless of port — Vite picks
+// the next free port (5173, 5174, 5175...) whenever an earlier one is still
+// held by a stray dev server, and a hardcoded port list breaks CORS every
+// time that happens. ALLOWED_ORIGINS stays authoritative for real, non-local
+// origins (e.g. a deployed frontend).
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://localhost:5180,http://127.0.0.1:5173,http://127.0.0.1:5180")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
+const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
 app.use(
   cors({
-    origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)),
+    origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin) || isLocalOrigin(origin)),
   })
 );
 app.use(express.json({ limit: "64kb" }));
@@ -39,7 +45,7 @@ const aiLimiter = rateLimit(Number(process.env.AI_RATE_LIMIT_PER_MINUTE || 20));
 app.get("/", (_req, res) => {
   res.json({
     name: "tlacuachic-server",
-    endpoints: ["/api/health", "/api/ai/status", "/api/density?lat=&lng=&category=", "POST /api/report", "POST /api/match", "POST /api/insights"],
+    endpoints: ["/api/health", "/api/ai/status", "/api/density?lat=&lng=&category=", "POST /api/report", "POST /api/match", "POST /api/insights", "POST /api/step-help", "POST /api/roadmap-review"],
   });
 });
 
@@ -210,6 +216,101 @@ app.post("/api/insights", aiLimiter, async (req, res) => {
     if (!(err instanceof LlmUnavailable)) throw err;
     console.warn("[insights] falling back to template:", err.message);
     res.json({ source: "fallback", model: null, insights: fallbackInsights(profile, report) });
+  }
+});
+
+// POST /api/step-help
+// A deliberately on-demand assistant for a single roadmap task. The default
+// UI guidance is local; this endpoint spends an LLM request only after the
+// entrepreneur asks a concrete question.
+app.post("/api/step-help", aiLimiter, async (req, res) => {
+  const step = req.body?.step;
+  const profile = req.body?.profile;
+  const question = typeof req.body?.question === "string" ? req.body.question.trim().slice(0, 700) : "";
+  const completed = Array.isArray(req.body?.completed) ? req.body.completed.filter((item) => typeof item === "string").slice(0, 12) : [];
+  if (!step || typeof step.title !== "string" || !Array.isArray(step.instructions) || !profile || typeof profile.businessType !== "string") {
+    return res.status(400).json({ error: "invalid_request", message: "Falta el contexto del paso." });
+  }
+  if (!question) return res.status(400).json({ error: "invalid_request", message: "Escribe una duda concreta." });
+
+  const safeStep = { title: step.title.slice(0, 140), summary: typeof step.summary === "string" ? step.summary.slice(0, 500) : "", instructions: step.instructions.filter((item) => typeof item === "string").slice(0, 8) };
+  const safeProfile = { businessType: profile.businessType.slice(0, 140), category: typeof profile.category === "string" ? profile.category.slice(0, 60) : "", city: typeof profile.city === "string" ? profile.city.slice(0, 80) : "", experience: typeof profile.experience === "string" ? profile.experience.slice(0, 40) : "", description: typeof profile.description === "string" ? profile.description.slice(0, 600) : "" };
+  const fallback = {
+    answer: `Para “${safeStep.title}”, separa tu duda en una acción verificable: qué dato falta, qué documento necesitas o qué autoridad/profesional puede confirmarlo. No avances solo por una suposición.`,
+    nextAction: completed.length < safeStep.instructions.length ? `Retoma el siguiente punto pendiente de tu checklist: ${safeStep.instructions.find((item) => !completed.includes(item)) ?? safeStep.instructions[0] ?? "revisa la fuente oficial"}.` : "Ya marcaste la lista; revisa la evidencia y contrástala con la fuente oficial antes de cerrar el paso.",
+  };
+  try {
+    const { model, data } = await chatJson({
+      system: [
+        "Eres el asistente de tareas de Tlacuachic para microemprendedores en México.",
+        "Responde una duda sobre un paso de formalización en español claro, en máximo 90 palabras.",
+        "Solo puedes afirmar hechos que aparezcan literalmente en `paso`. No agregues requisitos, deudas, permisos, costos, oficinas, portales, nombres de autoridades o documentos que no aparezcan allí.",
+        "Da contexto y una siguiente acción verificable, sin dar asesoría legal/fiscal definitiva. Si faltan datos, di que el caso depende del domicilio, giro o autoridad y pide contrastarlo con el enlace oficial visible en la pantalla o con un profesional.",
+        'Responde SOLO JSON: {"answer":"respuesta breve", "nextAction":"una acción concreta"}.',
+      ].join(" "),
+      user: JSON.stringify({ negocio: safeProfile, paso: safeStep, yaMarcado: completed, pregunta: question }),
+      temperature: 0.25,
+    });
+    if (typeof data?.answer !== "string" || typeof data?.nextAction !== "string") throw new LlmUnavailable("Invalid task helper response");
+    res.json({ source: "llm", model, answer: data.answer.slice(0, 650), nextAction: data.nextAction.slice(0, 260) });
+  } catch (err) {
+    if (!(err instanceof LlmUnavailable)) throw err;
+    console.warn("[step-help] falling back to local guide:", err.message);
+    res.json({ source: "fallback", model: null, ...fallback });
+  }
+});
+
+// POST /api/roadmap-review
+// An optional, concise reflection. It is deliberately not a compliance score
+// and consumes an LLM request only when the entrepreneur asks for it.
+app.post("/api/roadmap-review", aiLimiter, async (req, res) => {
+  const profile = req.body?.profile;
+  const steps = Array.isArray(req.body?.steps) ? req.body.steps : [];
+  if (!profile || typeof profile.businessType !== "string" || steps.length === 0) {
+    return res.status(400).json({ error: "invalid_request", message: "Falta el contexto de tu ruta." });
+  }
+  const safeProfile = {
+    businessType: profile.businessType.slice(0, 140),
+    city: typeof profile.city === "string" ? profile.city.slice(0, 80) : "",
+    experience: typeof profile.experience === "string" ? profile.experience.slice(0, 40) : "",
+    description: typeof profile.description === "string" ? profile.description.slice(0, 600) : "",
+  };
+  const safeSteps = steps.slice(0, 16).flatMap((item) => {
+    if (!item || typeof item.title !== "string" || !["completed", "available", "in-progress", "locked"].includes(item.status)) return [];
+    return [{ title: item.title.slice(0, 140), status: item.status }];
+  });
+  if (safeSteps.length === 0) return res.status(400).json({ error: "invalid_request", message: "No hay pasos válidos para revisar." });
+  const completed = safeSteps.filter((item) => item.status === "completed");
+  const next = safeSteps.find((item) => item.status === "available" || item.status === "in-progress");
+  const fallback = {
+    source: "fallback",
+    model: null,
+    strengths: completed.length ? `Ya registraste ${completed.length} paso${completed.length === 1 ? "" : "s"}; esa evidencia te da una base más ordenada.` : "Aún no has cerrado pasos; empezar por una sola evidencia reduce el riesgo de avanzar a ciegas.",
+    watchout: "No interpretes el progreso en Tlacuachic como una autorización: contrasta cada requisito con su fuente oficial o un profesional.",
+    nextFocus: next ? `Enfócate sólo en “${next.title}”. Cierra su checklist antes de abrir otro frente.` : "Revisa la evidencia de tus pasos cerrados y consulta requisitos que dependan de tu giro o domicilio.",
+  };
+  try {
+    const { model, data } = await chatJson({
+      system: [
+        "Eres un asistente de progreso para microemprendedores en México.",
+        "Da una crítica útil y amable basada únicamente en el perfil y estados recibidos. Máximo 55 palabras por campo.",
+        "No infieras demanda, competencia, rentas, flujo peatonal, clientes, mercado, costos ni viabilidad desde el giro o ciudad. No inventes requisitos legales, permisos, autoridades, indicadores financieros ni afirmes que el negocio cumple. No des asesoría definitiva.",
+        "Identifica una fortaleza, una alerta práctica y un único siguiente enfoque. Si la información no basta, dilo con claridad.",
+        'Responde SOLO JSON: {"strengths":"...", "watchout":"...", "nextFocus":"..."}.',
+      ].join(" "),
+      user: JSON.stringify({ negocio: safeProfile, avance: safeSteps }),
+      temperature: 0.25,
+    });
+    if (![data?.strengths, data?.watchout, data?.nextFocus].every((item) => typeof item === "string")) throw new LlmUnavailable("Invalid roadmap review response");
+    const responseText = `${data.strengths} ${data.watchout} ${data.nextFocus}`;
+    if (/\b(demanda|competencia|mercado|renta|alquiler|flujo peatonal|costo(?:s)?|clientes)\b/i.test(responseText)) {
+      throw new LlmUnavailable("Roadmap review made an unsupported market claim");
+    }
+    res.json({ source: "llm", model, strengths: data.strengths.slice(0, 420), watchout: data.watchout.slice(0, 420), nextFocus: data.nextFocus.slice(0, 420) });
+  } catch (err) {
+    if (!(err instanceof LlmUnavailable)) throw err;
+    console.warn("[roadmap-review] falling back to local guide:", err.message);
+    res.json(fallback);
   }
 });
 

@@ -55,8 +55,12 @@ export default function BusinessForm() {
   const [country, setCountry] = useState<(typeof countries)[number]>("Mexico");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
+  const [locationHint, setLocationHint] = useState("");
   const [experience, setExperience] = useState<"ninguna" | "poca" | "intermedia" | "experto" | null>(null);
   const [description, setDescription] = useState("");
+  const [customer, setCustomer] = useState("");
+  const [placeStatus, setPlaceStatus] = useState<"buscando" | "tengo-local" | "desde-casa" | "">("");
+  const [readiness, setReadiness] = useState<"solo-idea" | "ya-vendo" | "ya-tengo-proveedor" | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -70,13 +74,20 @@ export default function BusinessForm() {
   ][step];
 
   const submitForm = async (exp: NonNullable<typeof experience>, cat: NonNullable<typeof category>) => {
+    sessionStorage.setItem("tlacuachic-location-hint", locationHint.trim());
     const form = {
       businessType,
       category: cat,
       budget,
       location: { country, state, city },
       experience: exp,
-      description: description.trim() || undefined,
+      description: [
+        description.trim(),
+        customer.trim() && `Cliente al que busca atender: ${customer.trim()}.`,
+        locationHint.trim() && `Zona que quiere revisar: ${locationHint.trim()}.`,
+        placeStatus && `Situación del lugar: ${placeStatus === "buscando" ? "aún busca ubicación" : placeStatus === "tengo-local" ? "ya tiene un local o zona definida" : "iniciará desde casa o sin local abierto al público"}.`,
+        readiness && `Etapa actual: ${readiness === "solo-idea" ? "todavía está validando la idea" : readiness === "ya-vendo" ? "ya tiene primeras ventas" : "ya cuenta con proveedores o aliados iniciales"}.`,
+      ].filter(Boolean).join(" ").slice(0, 600) || undefined,
     };
     saveBusinessForm(form);
     setIsSubmitting(true);
@@ -237,6 +248,11 @@ export default function BusinessForm() {
                   />
                 </div>
               </div>
+              <div className="field">
+                <label htmlFor="location-hint">¿Ya tienes una zona o local en mente? <span className="muted">(opcional)</span></label>
+                <input id="location-hint" value={locationHint} onChange={(e) => setLocationHint(e.target.value)} placeholder="Ej. Santa Fe, cerca de la universidad" />
+                <span className="muted">Después podrás buscarlo y confirmar el punto exacto en un mapa.</span>
+              </div>
             </div>
           )}
 
@@ -282,20 +298,23 @@ export default function BusinessForm() {
           {step === 5 && (
             <div className="stack" style={{ gap: 18 }}>
               <span className="pill">Paso 6 de {TOTAL_STEPS}</span>
-              <h1 className="wizard-question">Cuéntanos más de tu negocio</h1>
-              <p>Esto es lo que la IA lee para entender tu idea de verdad, no solo su categoría: el concepto, a quién le vendes, qué lo hace distinto. Es opcional, pero entre más contexto des, más útil será tu reporte y las recomendaciones de tu equipo.</p>
+              <h1 className="wizard-question">Tres cosas para entender tu punto de partida</h1>
+              <p>Solo usamos esto para adaptar tu información y la ayuda del camino. No se comparte automáticamente con profesionales.</p>
+              <div className="field"><label htmlFor="customer">¿A quién quieres atender?</label><input id="customer" maxLength={140} placeholder="Ej. estudiantes y personas que trabajan cerca" value={customer} onChange={(event) => setCustomer(event.target.value)} /></div>
+              <div className="stack" style={{ gap: 8 }}><span className="wizard-field-label">¿Dónde operarías?</span><div className="row" style={{ gap: 8, flexWrap: "wrap" }}>{(["buscando", "tengo-local", "desde-casa"] as const).map((value) => <button type="button" key={value} className={`btn ${placeStatus === value ? "btn-primary" : "btn-secondary"}`} onClick={() => setPlaceStatus(value)}>{value === "buscando" ? "Busco local" : value === "tengo-local" ? "Ya tengo zona o local" : "Desde casa"}</button>)}</div></div>
+              <div className="stack" style={{ gap: 8 }}><span className="wizard-field-label">¿Qué ya tienes?</span><div className="row" style={{ gap: 8, flexWrap: "wrap" }}>{(["solo-idea", "ya-vendo", "ya-tengo-proveedor"] as const).map((value) => <button type="button" key={value} className={`btn ${readiness === value ? "btn-primary" : "btn-secondary"}`} onClick={() => setReadiness(value)}>{value === "solo-idea" ? "Solo la idea" : value === "ya-vendo" ? "Ya tengo ventas" : "Ya tengo aliados"}</button>)}</div></div>
               <div className="field">
-                <label htmlFor="description">Descripción de tu negocio (opcional)</label>
+                <label htmlFor="description">Algo más que quieras que la IA sepa (opcional)</label>
                 <textarea
                   id="description"
-                  rows={5}
-                  maxLength={600}
-                  placeholder="Ej. Quiero abrir un espacio pequeño enfocado en café de especialidad de productores mexicanos, con venta de grano para llevar. Busco un ambiente tranquilo para trabajar, no una cafetería de paso rápido."
+                  rows={3}
+                  maxLength={360}
+                  placeholder="Ej. Quiero especializarme en café de productores mexicanos y vender grano para llevar."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   disabled={isSubmitting}
                 />
-                <span className="muted" style={{ alignSelf: "flex-end" }}>{description.length}/600</span>
+                <span className="muted" style={{ alignSelf: "flex-end" }}>{description.length}/360</span>
               </div>
               {submitError && <span className="muted" style={{ color: "var(--warn)" }}>No se pudo generar tu reporte con IA ({submitError}). Intenta de nuevo.</span>}
             </div>

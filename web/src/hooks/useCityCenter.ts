@@ -3,12 +3,17 @@ import type { BusinessFormData } from "../types";
 
 const FALLBACK_CENTER: [number, number] = [19.4326, -99.1332]; // CDMX
 
-export function useCityCenter(form: BusinessFormData | null) {
+export function useCityCenter(form: BusinessFormData | null, selectedLocation?: { lat: number; lng: number } | null) {
   const [center, setCenter] = useState<[number, number] | null>(null);
   const [status, setStatus] = useState<"loading" | "ok" | "fallback">("loading");
 
   useEffect(() => {
     if (!form) return;
+    if (selectedLocation && Number.isFinite(selectedLocation.lat) && Number.isFinite(selectedLocation.lng)) {
+      setCenter([selectedLocation.lat, selectedLocation.lng]);
+      setStatus("ok");
+      return;
+    }
     let cancelled = false;
     setStatus("loading");
     const query = `${form.location.city}, ${form.location.state}, ${form.location.country}`;
@@ -32,7 +37,7 @@ export function useCityCenter(form: BusinessFormData | null) {
     return () => {
       cancelled = true;
     };
-  }, [form]);
+  }, [form, selectedLocation?.lat, selectedLocation?.lng]);
 
   return { center, status };
 }

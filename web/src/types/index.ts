@@ -58,6 +58,9 @@ export interface DataPreferences {
   locationPrecision: "city" | "zone";
   onboardingComplete: boolean;
   selectedZoneId?: string;
+  /** Exact point the owner chose for a local analysis. It is private and is
+   * never included in matching or community payloads. */
+  selectedLocation?: { lat: number; lng: number; label?: string };
   locationMode?: "explore" | "existing";
   /** Whether the user has dismissed the "how this works" tutorial banner. */
   tutorialSeen?: boolean;

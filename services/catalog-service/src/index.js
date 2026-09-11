@@ -10,12 +10,17 @@ await seedIfEmpty();
 
 const app = express();
 
+// Any localhost/127.0.0.1 origin is allowed regardless of port — Vite picks
+// the next free port whenever an earlier one is held by a stray dev server,
+// and a hardcoded port list breaks CORS every time that happens.
+// ALLOWED_ORIGINS stays authoritative for real, non-local origins.
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://localhost:5180,http://127.0.0.1:5173,http://127.0.0.1:5180")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
+const isLocalOrigin = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
-app.use(cors({ origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin)) }));
+app.use(cors({ origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin) || isLocalOrigin(origin)) }));
 app.use(express.json({ limit: "64kb" }));
 app.disable("x-powered-by");
 

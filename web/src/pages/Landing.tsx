@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { IconLeaf, IconRoute, IconChart, IconUsers, IconMap, IconCheck } from "../components/icons";
@@ -8,10 +9,19 @@ const programSteps = [
   { icon: IconRoute, title: "Construye el siguiente paso", body: "Obtén un camino de apertura, recursos oficiales y conexiones con mentores o proveedores cuando te hagan falta." },
 ];
 
+const lenses = [
+  { id: "offer", index: "01", title: "Oferta", short: "Negocios similares mapeados", proof: "Dato real", detail: "Comienza viendo establecimientos similares y su concentración. Es una lectura de oferta; no te dice qué abrir ni garantiza que una zona funcione.", source: "DENUE/INEGI para el piloto de cafeterías en CDMX; OpenStreetMap como fuente complementaria." },
+  { id: "formal", index: "02", title: "Ruta formal", short: "Fuentes oficiales y evidencia por paso", proof: "México", detail: "La ruta ordena requisitos para abrir y operar formalmente. Cada paso explica qué validar, dónde hacerlo y cuándo una persona experta puede ayudarte.", source: "La decisión sigue siendo tuya; Tlacuachic enlaza fuentes oficiales y no sustituye asesoría profesional." },
+  { id: "network", index: "03", title: "Red humana", short: "Contacta a quien resuelve el siguiente paso", proof: "Tu control", detail: "Cuando una tarea requiere experiencia, puedes solicitar contacto con un profesional. Solo se vuelve parte de tu equipo si ambas personas aceptan colaborar.", source: "Tú eliges qué información compartir, puedes revocar visibilidad y eliminar tu cuenta." },
+] as const;
+
 export default function Landing() {
   const navigate = useNavigate();
   const { user } = useApp();
+  const [activeLens, setActiveLens] = useState<(typeof lenses)[number]["id"]>("offer");
   const start = () => navigate(user ? "/formulario" : "/auth");
+  const lens = lenses.find((item) => item.id === activeLens) ?? lenses[0];
+  const scrollToSection = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   return (
     <div className="landing-page">
@@ -19,23 +29,26 @@ export default function Landing() {
         <button className="landing-brand" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Ir al inicio">
           <span className="sidebar-logo-mark"><IconLeaf size={17} /></span><span>Tlacuachic</span>
         </button>
-        <nav aria-label="Navegación principal"><a href="#como-funciona">Cómo funciona</a><a href="#datos">Tus datos</a><a href="#red">Para proveedores</a></nav>
+        <nav aria-label="Navegación principal"><button type="button" onClick={() => scrollToSection("como-funciona")}>Cómo funciona</button><button type="button" onClick={() => scrollToSection("datos")}>Tus datos</button><button type="button" onClick={() => scrollToSection("red")}>Para proveedores</button></nav>
         <button className="landing-login" onClick={() => navigate(user ? "/dashboard" : "/auth")}>{user ? "Ir a mi negocio" : "Iniciar sesión"}</button>
       </header>
 
       <main>
         <section className="landing-hero">
           <div className="landing-hero-copy landing-enter">
-            <h1>Empezar un negocio no debería exigir conocer a un abogado, contador y funcionario desde el día uno.</h1>
-            <p className="landing-lede">Tlacuachic pone tres cosas al alcance de quien emprende por primera vez: evidencia para evaluar una zona, una ruta para formalizarse y las personas correctas para cada siguiente paso.</p>
-            <div className="landing-actions"><button className="btn btn-primary landing-cta" onClick={start}>Quiero emprender</button><button className="btn btn-secondary landing-cta" onClick={() => navigate("/auth?role=provider")}>Ofrezco servicios</button><span>Sin costo en este prototipo · toma cerca de 4 minutos</span></div>
+            <span className="landing-eyebrow">Para quien quiere emprender en México</span>
+            <h1>De una idea a un negocio que puede operar.</h1>
+            <p className="landing-lede">Evalúa tu zona, entiende qué necesitas para formalizarte y construye un equipo para ejecutar. Todo en un solo lugar y bajo tu control.</p>
+            <div className="landing-actions"><button className="btn btn-primary landing-cta" onClick={start}>Crear mi plan de negocio</button><button className="btn btn-secondary landing-cta" onClick={() => scrollToSection("como-funciona")}>Ver cómo funciona</button><span>Primer recorrido: cerca de 4 minutos</span></div>
+            <div className="landing-proof-line"><span>Datos con fuente</span><span>Ruta formal guiada</span><span>Privacidad primero</span></div>
           </div>
           <aside className="landing-preview landing-enter" aria-label="Vista previa del análisis">
-            <div className="landing-preview-head"><span>Una decisión, evidencia primero</span><span>Tu ciudad</span></div>
-            <div className="landing-preview-reading"><span className="preview-index">01</span><div><strong>Oferta</strong><small>Negocios similares mapeados</small></div><b>Dato real</b></div>
-            <div className="landing-preview-reading"><span className="preview-index">02</span><div><strong>Ruta formal</strong><small>Fuentes oficiales y evidencia por paso</small></div><b>México</b></div>
-            <div className="landing-preview-reading"><span className="preview-index">03</span><div><strong>Red humana</strong><small>Contacta a quien pueda resolver el siguiente paso</small></div><b>Tu control</b></div>
-            <p>No decidimos por ti ni prometemos éxito. Hacemos que información, cumplimiento y oportunidad sean más accesibles.</p>
+            <div className="landing-preview-head"><span>Una decisión, evidencia primero</span><span>Explora cada parte</span></div>
+            <div className="landing-preview-options" role="tablist" aria-label="Qué hace Tlacuachic">
+              {lenses.map((item) => <button key={item.id} type="button" role="tab" aria-selected={activeLens === item.id} className={`landing-preview-reading${activeLens === item.id ? " active" : ""}`} onClick={() => setActiveLens(item.id)}><span className="preview-index">{item.index}</span><span><strong>{item.title}</strong><small>{item.short}</small></span><b>{item.proof}</b></button>)}
+            </div>
+            <div className="landing-preview-detail" aria-live="polite"><strong>{lens.title}</strong><p>{lens.detail}</p><small>{lens.source}</small></div>
+            <p>La herramienta informa, conecta y organiza. La decisión y el control siempre son tuyos.</p>
           </aside>
         </section>
 
