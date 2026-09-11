@@ -1,0 +1,16 @@
+{
+  "name": "tlacuachip-user-service",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Owns users, business profiles, and roadmap progress. Independent SQLite database — no other service reads or writes it directly.",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.9.1",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

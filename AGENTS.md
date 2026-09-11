@@ -46,6 +46,10 @@ tlacuachip/
 │       ├── overpass.js    Overpass (OpenStreetMap) client
 │       ├── zones.js       3x3 zone-grid math, shared conceptually with web
 │       └── categories.js  Business category → OSM tag mapping
+├── services/              Real persistence layer, built in parallel —
+│                          NOT wired to the app yet. See services/README.md.
+│   ├── user-service/       Users, business profiles, roadmap progress. Own SQLite DB.
+│   └── catalog-service/    Roadmap steps, mentors, suppliers. Own SQLite DB, seeded.
 └── design/                Source `.dc.html` for the click-through concept
                             prototype (Claude Design canvas) — not part of
                             the shipped app, keep for pitching/iterating.
@@ -178,7 +182,9 @@ file unless you have a concrete reason; they're flagged, not broken.
   actual formal-sector business counts and sector growth, replacing
   `generateMockReport` in `web/src/data/mockData.ts`.
 - **No auth backend** — "login" just stores a name/email in `localStorage`.
-  Fine for a demo, not for anything real.
+  `services/user-service` now persists users/profiles/progress for real
+  (SQLite), but the web app doesn't call it yet — see `services/README.md`
+  for the cutover plan. Still no passwords/sessions, just email-as-identity.
 - **No tests.** Priority if this continues: the scoring math
   (`opportunityFrom` in `Heatmap.tsx`, `scoreFromCount` in
   `server/src/zones.js`) and the zone-bucketing geometry, since those are
