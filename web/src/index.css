@@ -578,6 +578,27 @@ p {
   transform: translateY(-1px) scale(0.99);
 }
 
+.evidence-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--mainBorder);
+  color: var(--primaryText);
+  font-size: 13px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.evidence-item:last-child { border-bottom: 0; }
+.evidence-item input {
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--accentBlue);
+  flex: 0 0 auto;
+}
+.evidence-item:has(input:focus-visible) { outline: 2px solid var(--accentBlue); outline-offset: 3px; }
+
 .btn {
   transition: background-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
 }

@@ -20,7 +20,7 @@ La propuesta diferencial es convertir señales locales —oferta real de OpenStr
 
 ## Operating Context
 
-Flujo principal: crear cuenta, describir el negocio, decidir qué datos puede ver la red, interpretar tres mapas, elegir o confirmar zona y operar el negocio desde un dashboard con roadmap, mentores y proveedores.
+Flujo principal: crear cuenta, describir el negocio, decidir qué datos puede ver la red, interpretar tres mapas, elegir o confirmar zona y operar el negocio desde un dashboard con roadmap, mentores y proveedores. La ruta de formalización vigente se limita a México: distingue pasos base, requisitos condicionales por giro/municipio y evidencia que el usuario conserva.
 
 ## Capabilities and Constraints
 
@@ -29,6 +29,7 @@ Flujo principal: crear cuenta, describir el negocio, decidir qué datos puede ve
 - Demanda y costos: estimaciones del prototipo; deben presentarse como tales.
 - Datos del perfil se persisten localmente en esta versión; el usuario puede editar visibilidad y eliminar su registro desde Configuración.
 - Inferido del brief: el onboarding debe llegar a la decisión de zona antes de abrir el dashboard.
+- La ruta explica fuentes y evidencia, pero no expide permisos ni garantiza cumplimiento; uso de suelo, apertura, Protección Civil y varios requisitos dependen del municipio y la actividad.
 
 ## Brand Commitments
 
@@ -45,4 +46,3 @@ Nombre: Tlacuachip. Voz directa, práctica y sin prometer resultados financieros
 2. Diferenciar con claridad entre datos reales, estimaciones y recomendaciones.
 3. El usuario conserva control de su perfil, visibilidad y eliminación de datos.
 4. Mostrar el siguiente paso útil, no todas las opciones a la vez.
-

@@ -22,3 +22,4 @@ Minimal operating interface: quiet off-white canvas, near-black typography, thin
 - “Dato real” is reserved for the live OpenStreetMap supply count.
 - Demand and operating costs are always labeled “estimación”.
 - Privacy choices explain the audience and the exact category of data shared.
+- The México roadmap labels every item as base, conditional by case, or recommended. It shows the authority and evidence before a completion action; it never presents a generic checklist as a permit.

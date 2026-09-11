@@ -70,7 +70,11 @@ export interface RoadmapStep {
 export interface StepDetail {
   summary: string;
   instructions: string[];
-  officialLink?: { label: string; url: string };
+  applicability: "base" | "conditional" | "recommended";
+  authority: string;
+  evidence: string[];
+  officialLinks: { label: string; url: string }[];
+  caution?: string;
   hasCost: boolean;
   estimatedCost?: string;
   canDoOnline: boolean;

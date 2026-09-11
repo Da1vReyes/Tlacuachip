@@ -31,18 +31,56 @@ const timelineHeight = centerY + laneHeight + nodeSize / 2;
 
 export default function Roadmap() {
   const navigate = useNavigate();
-  const { steps, progress } = useApp();
+  const { steps, progress, businessForm } = useApp();
+
+  const isMexico = businessForm?.location.country === "Mexico";
+  const baseSteps = steps.filter((step) => step.detail.applicability === "base");
+  const completedBaseSteps = baseSteps.filter((step) => step.status === "completed").length;
 
   const xpForNextLevel = progress.level * 400;
   const xpProgress = Math.min(100, Math.round((progress.xp % 400) / 4));
   const startX = 90;
   const timelineWidth = Math.max((steps.length - 1) * nodeGap + startX * 2, 720);
 
+  if (!isMexico) {
+    return (
+      <div className="stack" style={{ gap: 20, maxWidth: 680 }}>
+        <div className="stack" style={{ gap: 6 }}>
+          <h1>Ruta de formalización</h1>
+          <p>Por ahora, esta ruta regulatoria está diseñada solo para México. No te mostraremos requisitos legales de otro país como si fueran válidos para tu caso.</p>
+        </div>
+        <div className="card stack" style={{ gap: 12 }}>
+          <h2>Tu análisis de zona sigue disponible</h2>
+          <p>Explora oferta, demanda y costos mientras construimos una ruta regulatoria verificable para tu país.</p>
+          <button className="btn btn-primary" onClick={() => navigate("/mapa-calor")}>Volver al mapa</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="stack" style={{ gap: 20 }}>
       <div className="stack" style={{ gap: 4 }}>
-        <h1>Tu camino</h1>
-        <p>Cada paso te acerca a un negocio real. Complétalos a tu ritmo — desliza para ver todo el camino.</p>
+        <h1>Tu camino para operar formalmente</h1>
+        <p>Ruta de formalización para México. Cada paso pide evidencia; los requisitos especiales se revisan según giro y municipio.</p>
+      </div>
+
+      <div className="grid-3">
+        <div className="card stack" style={{ gap: 5 }}>
+          <span className="muted" style={{ fontSize: 12 }}>Base de formalización</span>
+          <strong style={{ fontSize: 24 }}>{completedBaseSteps} de {baseSteps.length}</strong>
+          <span className="muted" style={{ fontSize: 12 }}>pasos base con evidencia</span>
+        </div>
+        <div className="card stack" style={{ gap: 5 }}>
+          <span className="muted" style={{ fontSize: 12 }}>Requisitos especiales</span>
+          <strong style={{ fontSize: 15 }}>Se validan por giro</strong>
+          <span className="muted" style={{ fontSize: 12 }}>sanitario, laboral y local</span>
+        </div>
+        <div className="card stack" style={{ gap: 5 }}>
+          <span className="muted" style={{ fontSize: 12 }}>Criterio de avance</span>
+          <strong style={{ fontSize: 15 }}>No sustituye una autoridad</strong>
+          <span className="muted" style={{ fontSize: 12 }}>confirma siempre con fuentes oficiales</span>
+        </div>
       </div>
 
       <div className="card" style={{ overflowX: "auto", overflowY: "hidden" }}>
@@ -146,7 +184,7 @@ export default function Roadmap() {
                   }}
                 >
                   <span className="pill" style={{ background: "var(--navItemActiveBg)", fontSize: 10 }}>
-                    {categoryLabel[step.category]}
+                    {step.detail.applicability === "base" ? "Base" : step.detail.applicability === "conditional" ? "Según tu caso" : "Siguiente nivel"}
                   </span>
                   <span style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.25, color: "var(--primaryText)" }}>
                     {step.title}
@@ -187,9 +225,9 @@ export default function Roadmap() {
         </div>
 
         <div className="card stack">
-          <h2>Categorías</h2>
+          <h2>Qué incluye</h2>
           <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
-            {Object.entries(categoryLabel).map(([key, label]) => {
+            {Object.entries(categoryLabel).filter(([key]) => steps.some((step) => step.category === key)).map(([key, label]) => {
               const Icon = categoryIcon[key];
               return (
                 <div key={key} className="row" style={{ alignItems: "center", gap: 6 }}>
