@@ -46,7 +46,7 @@ app.get("/api/density", async (req, res) => {
       supplyScore: scoreFromCount(counts[z.id]),
     }));
 
-    res.json({ source, category, center: { lat, lng }, totalPoints: points.length, zones: zonesOut });
+    res.json({ source, category, center: { lat, lng }, totalPoints: points.length, points, zones: zonesOut });
   } catch (err) {
     console.error("[density] Overpass fetch failed:", err.message);
     res.status(502).json({ error: "upstream_unavailable", message: "Could not reach OpenStreetMap Overpass API" });

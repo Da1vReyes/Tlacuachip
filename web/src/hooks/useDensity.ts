@@ -9,9 +9,17 @@ export interface DensityZone {
   supplyScore: number;
 }
 
+export interface DensityPoint {
+  lat: number;
+  lng: number;
+  name: string;
+  kind: string;
+}
+
 interface DensityResponse {
   source: string;
   totalPoints: number;
+  points: DensityPoint[];
   zones: DensityZone[];
 }
 
