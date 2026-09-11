@@ -7,24 +7,34 @@ import { useCityCenter } from "../hooks/useCityCenter";
 import { useDensity } from "../hooks/useDensity";
 import type { ZoneMetrics } from "../types";
 
-type Metric = "opportunityScore" | "demand" | "supply" | "cost";
+type Metric = "demand" | "supply" | "cost";
 
-const metricMeta: Record<Metric, { label: string; low: string; high: string; goodIsHigh: boolean; detail: string }> = {
-  opportunityScore: { label: "Oportunidad", low: "Menor oportunidad", high: "Mayor oportunidad", goodIsHigh: true, detail: "Cruza demanda estimada, competencia real y costo operativo relativo." },
-  demand: { label: "Demanda", low: "Menor demanda", high: "Mayor demanda", goodIsHigh: true, detail: "Estimación de oportunidad de consumo por área. Úsala como una hipótesis a validar." },
-  supply: { label: "Oferta", low: "Más competencia", high: "Menos competencia", goodIsHigh: false, detail: "Los puntos son negocios similares encontrados en OpenStreetMap; el halo resume su concentración." },
-  cost: { label: "Costos", low: "Más costoso", high: "Más accesible", goodIsHigh: false, detail: "Estimación de presión de renta y operación relativa por área." },
+const metricMeta: Record<Metric, { label: string; low: string; high: string; detail: string }> = {
+  demand: { label: "Demanda", low: "Menor demanda", high: "Mayor demanda", detail: "Estimación de oportunidad de consumo por área. Úsala como una hipótesis a validar." },
+  supply: { label: "Oferta", low: "Menos competencia", high: "Más competencia", detail: "Los puntos son negocios similares encontrados en OpenStreetMap; el halo resume su concentración." },
+  cost: { label: "Costos", low: "Menor costo", high: "Mayor costo", detail: "Estimación de presión de renta y operación relativa por área." },
 };
 
 const ROW_OFFSET = [-0.011, 0, 0.011];
 const COL_OFFSET = [-0.014, 0, 0.014];
 
-function heatColor(value: number, goodIsHigh: boolean) {
-  const score = goodIsHigh ? value : 100 - value;
-  if (score >= 72) return "#1f6feb";
-  if (score >= 54) return "#77a4e8";
-  if (score >= 36) return "#e4c866";
-  return "#d67b55";
+function heatColor(metric: Metric, value: number) {
+  if (metric === "supply") {
+    if (value >= 72) return "#d84331";
+    if (value >= 54) return "#eb8654";
+    if (value >= 36) return "#efc567";
+    return "#dfe5d8";
+  }
+  if (metric === "cost") {
+    if (value >= 72) return "#8a4fa3";
+    if (value >= 54) return "#bd7eaa";
+    if (value >= 36) return "#e1b6aa";
+    return "#e8e3db";
+  }
+  if (value >= 72) return "#087f6a";
+  if (value >= 54) return "#59ae8c";
+  if (value >= 36) return "#c6cf6a";
+  return "#e7d5a0";
 }
 
 function MapFocus({ target, zoom }: { target: [number, number]; zoom: number }) {
@@ -36,7 +46,7 @@ function MapFocus({ target, zoom }: { target: [number, number]; zoom: number }) 
 export default function Heatmap() {
   const navigate = useNavigate();
   const { businessForm, preferences } = useApp();
-  const [metric, setMetric] = useState<Metric>("opportunityScore");
+  const [metric, setMetric] = useState<Metric>("demand");
   const [selected, setSelected] = useState<ZoneMetrics | null>(null);
   const { center, status: geoStatus } = useCityCenter(businessForm);
   const { data: density, status: densityStatus } = useDensity(center, businessForm?.category ?? null);
@@ -72,14 +82,22 @@ export default function Heatmap() {
   const points = density?.points ?? [];
   const zones = center ? heatmap.zones.map((zone) => ({ ...zone, lat: center[0] + ROW_OFFSET[zone.row], lng: center[1] + COL_OFFSET[zone.col] })) : [];
   const bestZone = [...heatmap.zones].sort((a, b) => b.opportunityScore - a.opportunityScore)[0];
+  const focusZone = selected ?? bestZone;
+  const highestZone = [...heatmap.zones].sort((a, b) => b[metric] - a[metric])[0];
+  const lowestZone = [...heatmap.zones].sort((a, b) => a[metric] - b[metric])[0];
+  const layerReading = metric === "supply"
+    ? `La competencia se concentra más en ${highestZone.name}. ${focusZone.name} tiene ${focusZone.supply}/100 de oferta${isRealSupply ? ", calculada con lugares mapeados" : " estimada mientras se restablece la fuente"}.`
+    : metric === "demand"
+      ? `${highestZone.name} concentra la señal de consumo más alta. ${focusZone.name} marca ${focusZone.demand}/100: una pista para validar con visitas y conversación local.`
+      : `${highestZone.name} concentra la presión operativa más alta. ${lowestZone.name} es la señal más ligera; ${focusZone.name} marca ${focusZone.cost}/100.`;
 
   return (
     <div className="heatmap-page">
       <header className="heatmap-heading">
         <div>
           <span className="pill">Análisis de ubicación · {heatmap.centerLabel}</span>
-          <h1>Encuentra señales antes de elegir una zona.</h1>
-          <p>Explora capas separadas: la oferta usa lugares reales de OpenStreetMap; demanda y costos son estimaciones visibles como tales.</p>
+          <h1>Tres mapas. Una decisión mejor informada.</h1>
+          <p>Lee cada señal por separado antes de cruzarlas: oferta usa lugares reales de OpenStreetMap; demanda y costos son estimaciones visibles como tales.</p>
         </div>
         <div className={`heatmap-proof${densityStatus === "error" ? " unavailable" : ""}`}><span />{supplyStatusLabel}</div>
       </header>
@@ -87,7 +105,7 @@ export default function Heatmap() {
       <div className="heatmap-tabs" role="tablist" aria-label="Capas del análisis">
         {(Object.keys(metricMeta) as Metric[]).map((item) => (
           <button key={item} type="button" role="tab" aria-selected={metric === item} className={metric === item ? "active" : ""} onClick={() => { setMetric(item); setSelected(null); }}>
-            {metricMeta[item].label}
+            Mapa de {metricMeta[item].label.toLowerCase()}
           </button>
         ))}
       </div>
@@ -101,7 +119,7 @@ export default function Heatmap() {
               {zones.map((zone) => {
                 const selectedZone = selected?.id === zone.id;
                 return (
-                  <Circle key={zone.id} center={[zone.lat, zone.lng]} radius={720} pathOptions={{ stroke: false, fillColor: heatColor(zone[metric], meta.goodIsHigh), fillOpacity: selectedZone ? .44 : .25 }} eventHandlers={{ click: () => setSelected(zone) }} />
+                  <Circle key={zone.id} center={[zone.lat, zone.lng]} radius={760} pathOptions={{ className: "heatmap-field", stroke: false, fillColor: heatColor(metric, zone[metric]), fillOpacity: selectedZone ? .48 : .30 }} eventHandlers={{ click: () => setSelected(zone) }} />
                 );
               })}
               {metric === "supply" && points.slice(0, 120).map((point, index) => (
@@ -109,16 +127,17 @@ export default function Heatmap() {
                   <LeafletTooltip direction="top" offset={[0, -7]}>{point.name} · {point.kind}</LeafletTooltip>
                 </CircleMarker>
               ))}
-              {metric !== "supply" && zones.map((zone) => <CircleMarker key={`label-${zone.id}`} center={[zone.lat, zone.lng]} radius={selected?.id === zone.id ? 11 : 8} pathOptions={{ color: "#fff", weight: 1.5, fillColor: heatColor(zone[metric], meta.goodIsHigh), fillOpacity: 1 }} eventHandlers={{ click: () => setSelected(zone) }}><LeafletTooltip direction="top">{zone.name} · {zone[metric]}/100</LeafletTooltip></CircleMarker>)}
+              {metric !== "supply" && zones.map((zone) => <CircleMarker key={`label-${zone.id}`} center={[zone.lat, zone.lng]} radius={selected?.id === zone.id ? 11 : 8} pathOptions={{ color: "#fff", weight: 1.5, fillColor: heatColor(metric, zone[metric]), fillOpacity: 1 }} eventHandlers={{ click: () => setSelected(zone) }}><LeafletTooltip direction="top">{zone.name} · {zone[metric]}/100</LeafletTooltip></CircleMarker>)}
             </MapContainer>
           ) : <div className="heatmap-loading">Ubicando {businessForm.location.city}…</div>}
-          <div className="heatmap-map-label"><strong>{meta.label}</strong><span>{metric === "supply" ? "Puntos reales + concentración" : "Estimación por área"}</span></div>
+          <div className="heatmap-map-label"><strong>Mapa de {meta.label.toLowerCase()}</strong><span>{metric === "supply" ? "Puntos reales + concentración" : "Estimación por área"}</span></div>
           {metric === "supply" && <div className="heatmap-map-note">Toca un punto para ver el lugar registrado.</div>}
         </div>
 
         <aside className="heatmap-insight">
-          <div className="heatmap-scale"><span>{meta.low}</span><div><i /><i /><i /><i /></div><span>{meta.high}</span></div>
-          <div className="heatmap-copy"><span>Capa actual</span><h2>{meta.label}</h2><p>{meta.detail}</p></div>
+          <div className={`heatmap-scale heatmap-scale-${metric}`}><span>{meta.low}</span><div><i /><i /><i /><i /></div><span>{meta.high}</span></div>
+          <div className="heatmap-copy"><span>Interpretación del mapa</span><h2>{meta.label}</h2><p>{meta.detail}</p></div>
+          <div className="heatmap-layer-reading"><strong>Qué revela esta capa</strong><p>{layerReading}</p></div>
           {selected ? (
             <div className="heatmap-zone-report">
               <span>Área seleccionada</span><h3>{selected.name}</h3>
@@ -129,7 +148,7 @@ export default function Heatmap() {
           ) : (
             <div className="heatmap-empty"><strong>Selecciona un área</strong><span>Verás el reporte comparativo para esa zona.</span></div>
           )}
-          <div className="heatmap-best"><span>Mejor oportunidad estimada</span><strong>{bestZone.name}</strong><p>{bestZone.opportunityScore}/100 · demanda favorable con costo y oferta comparados.</p></div>
+          <div className="heatmap-general-reading"><span>Interpretación general · las 3 señales</span><strong>{bestZone.name} es la zona más equilibrada.</strong><p>Su oportunidad estimada es {bestZone.opportunityScore}/100, combinando demanda {bestZone.demand}, oferta {bestZone.supply} y costos {bestZone.cost}. La recomendación no sustituye validar el lugar en persona.</p></div>
           <button className="btn btn-primary" onClick={() => navigate("/roadmap")}>Ver mi siguiente paso</button>
         </aside>
       </section>

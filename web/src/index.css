@@ -659,18 +659,23 @@ p {
 .heatmap-insight { display: grid; align-content: start; gap: 24px; padding: 26px; }
 .heatmap-scale { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; color: var(--secondaryText); font-size: 10px; }
 .heatmap-scale > div { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; height: 6px; }
-.heatmap-scale i:nth-child(1) { background: #d67b55; }.heatmap-scale i:nth-child(2) { background: #e4c866; }.heatmap-scale i:nth-child(3) { background: #77a4e8; }.heatmap-scale i:nth-child(4) { background: #1f6feb; }
+.heatmap-scale-demand i:nth-child(1) { background: #e7d5a0; }.heatmap-scale-demand i:nth-child(2) { background: #c6cf6a; }.heatmap-scale-demand i:nth-child(3) { background: #59ae8c; }.heatmap-scale-demand i:nth-child(4) { background: #087f6a; }
+.heatmap-scale-supply i:nth-child(1) { background: #dfe5d8; }.heatmap-scale-supply i:nth-child(2) { background: #efc567; }.heatmap-scale-supply i:nth-child(3) { background: #eb8654; }.heatmap-scale-supply i:nth-child(4) { background: #d84331; }
+.heatmap-scale-cost i:nth-child(1) { background: #e8e3db; }.heatmap-scale-cost i:nth-child(2) { background: #e1b6aa; }.heatmap-scale-cost i:nth-child(3) { background: #bd7eaa; }.heatmap-scale-cost i:nth-child(4) { background: #8a4fa3; }
 .heatmap-copy { display: grid; gap: 7px; }
-.heatmap-copy > span, .heatmap-zone-report > span, .heatmap-best > span { color: var(--secondaryText); font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
+.heatmap-copy > span, .heatmap-zone-report > span { color: var(--secondaryText); font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
 .heatmap-copy h2, .heatmap-zone-report h3 { margin: 0; font-size: 26px; letter-spacing: -.04em; }
 .heatmap-copy p { margin: 0; color: var(--secondaryText); font-size: 13px; line-height: 1.55; }
+.heatmap-layer-reading { display: grid; gap: 6px; padding: 15px 0; border-top: 1px solid var(--mainBorder); border-bottom: 1px solid var(--mainBorder); }
+.heatmap-layer-reading strong { font-size: 13px; }.heatmap-layer-reading p { margin: 0; color: var(--secondaryText); font-size: 13px; line-height: 1.55; }
 .heatmap-zone-report { display: grid; gap: 8px; padding: 18px 0; border-top: 1px solid var(--mainBorder); border-bottom: 1px solid var(--mainBorder); }
 .heatmap-zone-report > b { font-size: 42px; line-height: 1; letter-spacing: -.06em; }
 .heatmap-zone-report dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 0; }
 .heatmap-zone-report dl div { display: grid; gap: 2px; }.heatmap-zone-report dt { color: var(--secondaryText); font-size: 10px; }.heatmap-zone-report dd { margin: 0; font-size: 14px; font-weight: 700; }
-.heatmap-zone-report p, .heatmap-best p { margin: 2px 0 0; color: var(--secondaryText); font-size: 12px; line-height: 1.5; }
+.heatmap-zone-report p { margin: 2px 0 0; color: var(--secondaryText); font-size: 12px; line-height: 1.5; }
 .heatmap-empty { display: grid; gap: 5px; padding: 17px 0; border-top: 1px solid var(--mainBorder); border-bottom: 1px solid var(--mainBorder); color: var(--secondaryText); font-size: 13px; }.heatmap-empty strong { color: var(--primaryText); }
-.heatmap-best { display: grid; gap: 4px; }.heatmap-best strong { font-size: 20px; letter-spacing: -.03em; }
+.heatmap-general-reading { display: grid; gap: 7px; padding-top: 4px; }.heatmap-general-reading span { color: var(--secondaryText); font-size: 10px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }.heatmap-general-reading strong { font-size: 17px; letter-spacing: -.025em; }.heatmap-general-reading p { margin: 0; color: var(--secondaryText); font-size: 12px; line-height: 1.55; }
+.heatmap-field { filter: blur(8px); }
 .heatmap-disclaimer { color: var(--secondaryText); font-size: 12px; }
 
 /* ---------- Privacy, map interpretation and minimal onboarding ---------- */
