@@ -11,11 +11,12 @@ architecture, conventions, and how to run everything.
 
 ## Deploy
 
-The project is prepared for a Railway deployment with separate web, market,
+The project is prepared for a Render Blueprint with separate web, market,
 users and catalog services plus one shared PostgreSQL database. Follow the
 exact service order and environment-variable checklist in
-[docs/RAILWAY.md](./docs/RAILWAY.md). For a reproducible local stack, use
-`docker compose up --build` once Docker Desktop is running.
+[docs/RENDER.md](./docs/RENDER.md). The previous Railway guide remains as an
+alternative. For a reproducible local stack, use `docker compose up --build`
+once Docker Desktop is running.
 
 ## Quickstart
 
