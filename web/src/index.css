@@ -282,6 +282,10 @@ a:hover {
 .landing-program { display: grid; grid-template-columns: minmax(0, .78fr) minmax(0, 1.12fr); gap: clamp(48px, 8vw, 130px); }
 .landing-section-intro h2, .landing-data h2, .landing-network h2, .landing-final h2 { margin: 0; font-size: clamp(36px, 4vw, 52px); line-height: .98; text-wrap: balance; }
 .landing-section-intro p, .landing-data-statement p, .landing-network p, .landing-final p { max-width: 50ch; margin: 20px 0 0; color: var(--secondaryText); line-height: 1.65; }
+.landing-problem { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); gap: clamp(48px, 8vw, 130px); }
+.landing-problem h2 { max-width: 12ch; }
+.landing-problem-copy { max-width: 54ch; display: grid; align-content: start; gap: 22px; }
+.landing-problem-copy p { margin: 0; color: var(--secondaryText); font-size: 16px; line-height: 1.7; }
 .landing-steps { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--mainBorder); }
 .landing-steps li { display: grid; grid-template-columns: 38px 26px minmax(0, 1fr); gap: 14px; padding: 25px 0; border-bottom: 1px solid var(--mainBorder); }
 .landing-step-number { color: var(--secondaryText); font-size: 12px; font-variant-numeric: tabular-nums; }
@@ -295,6 +299,8 @@ a:hover {
 .landing-network-list { display: grid; align-content: center; border-top: 1px solid var(--mainBorder); }
 .landing-network-list span { display: flex; align-items: center; gap: 13px; min-height: 72px; border-bottom: 1px solid var(--mainBorder); font-size: 14px; font-weight: 600; }
 .landing-network-list svg { color: var(--secondaryText); }
+.landing-network-list small { padding-top: 18px; color: var(--secondaryText); font-size: 12px; line-height: 1.55; }
+.landing-provider-cta { margin-top: 28px; }
 .landing-final { max-width: 700px; padding: 144px 0; text-align: center; }
 .landing-final p { margin-inline: auto; }
 .landing-final .landing-cta { margin-top: 30px; }
@@ -494,7 +500,7 @@ p {
   .grid-2, .grid-3, .grid-4 {
     grid-template-columns: 1fr;
   }
-  .landing-hero, .landing-program, .landing-data, .landing-network { grid-template-columns: 1fr; }
+.landing-hero, .landing-program, .landing-problem, .landing-data, .landing-network { grid-template-columns: 1fr; }
   .landing-hero { min-height: 0; padding: 64px 0; }
 }
 
@@ -806,6 +812,11 @@ p {
   line-height: 1.2;
   margin: 0 0 8px;
 }
+
+.wizard-start { max-width: 590px; }
+.wizard-intro { max-width: 53ch; color: var(--secondaryText); font-size: 15px; line-height: 1.65; }
+.wizard-field-label { margin-top: 8px; color: var(--primaryText); font-size: 13px; font-weight: 700; }
+.wizard-next { margin-top: -4px; color: var(--secondaryText); font-size: 12px; }
 
 .chip-grid {
   display: grid;
