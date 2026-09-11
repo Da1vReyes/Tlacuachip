@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { communityMessages } from "../data/mockData";
@@ -9,6 +9,8 @@ const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 export default function Community() {
   const navigate = useNavigate();
   const { progress } = useApp();
+  const [draft, setDraft] = useState("");
+  const [published, setPublished] = useState(false);
 
   // Freeze "now" for this render pass so the active/inactive check stays
   // consistent even if the component re-renders multiple times.
@@ -74,9 +76,10 @@ export default function Community() {
       <div className="card stack">
         <h2>Comparte algo</h2>
         <div className="field">
-          <textarea rows={4} placeholder="Comparte algo con la comunidad..." />
+          <textarea rows={4} placeholder="Comparte algo con la comunidad..." value={draft} onChange={(event) => { setDraft(event.target.value); setPublished(false); }} />
         </div>
-        <button className="btn btn-primary">Publicar</button>
+        <button className="btn btn-primary" disabled={!draft.trim()} onClick={() => { setDraft(""); setPublished(true); }}>Publicar</button>
+        {published && <p className="muted" role="status">Publicado en esta sesión del prototipo.</p>}
       </div>
     </div>
   );

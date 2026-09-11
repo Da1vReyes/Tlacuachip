@@ -184,7 +184,7 @@ export default function Dashboard() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20, alignItems: "start" }}>
-        <div className="card card-clickable" style={{ padding: 0, overflow: "hidden", cursor: "pointer" }} onClick={() => navigate("/mapa-calor")}>
+        <button type="button" className="card card-clickable card-button" style={{ padding: 0, overflow: "hidden" }} onClick={() => navigate("/mapa-calor")}>
           <div style={{ height: 160 }}>
             {center && heatmap ? (
               <MapContainer center={center} zoom={13} zoomControl={false} dragging={false} scrollWheelZoom={false} doubleClickZoom={false} attributionControl={false} style={{ height: "100%", width: "100%" }}>
@@ -215,9 +215,9 @@ export default function Dashboard() {
               </p>
             )}
           </div>
-        </div>
+        </button>
 
-        <div className="card card-clickable" style={{ cursor: "pointer" }} onClick={() => navigate("/roadmap")}>
+        <button type="button" className="card card-clickable card-button" onClick={() => navigate("/roadmap")}>
           <div className="row" style={{ alignItems: "center", gap: 6 }}>
             <IconRoute size={15} />
             <h2>Tu camino</h2>
@@ -235,7 +235,7 @@ export default function Dashboard() {
               </div>
             )}
           </div>
-        </div>
+        </button>
 
         <div className="card">
           <div className="row" style={{ alignItems: "center", gap: 6, justifyContent: "space-between" }}>
