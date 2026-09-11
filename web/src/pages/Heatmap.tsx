@@ -96,8 +96,8 @@ export default function Heatmap() {
       <header className="heatmap-heading">
         <div>
           <span className="pill">Análisis de ubicación · {heatmap.centerLabel}</span>
-          <h1>Tres mapas. Una decisión mejor informada.</h1>
-          <p>Lee cada señal por separado antes de cruzarlas: oferta usa lugares reales de OpenStreetMap; demanda y costos son estimaciones visibles como tales.</p>
+          <h1>Oferta, demanda y costos por zona</h1>
+          <p>Cambia de capa para entender cada señal. La oferta usa lugares reales de OpenStreetMap; demanda y costos son estimaciones del prototipo.</p>
         </div>
         <div className={`heatmap-proof${densityStatus === "error" ? " unavailable" : ""}`}><span />{supplyStatusLabel}</div>
       </header>
@@ -105,7 +105,7 @@ export default function Heatmap() {
       <div className="heatmap-tabs" role="tablist" aria-label="Capas del análisis">
         {(Object.keys(metricMeta) as Metric[]).map((item) => (
           <button key={item} type="button" role="tab" aria-selected={metric === item} className={metric === item ? "active" : ""} onClick={() => { setMetric(item); setSelected(null); }}>
-            Mapa de {metricMeta[item].label.toLowerCase()}
+            {metricMeta[item].label}
           </button>
         ))}
       </div>
@@ -130,7 +130,7 @@ export default function Heatmap() {
               {metric !== "supply" && zones.map((zone) => <CircleMarker key={`label-${zone.id}`} center={[zone.lat, zone.lng]} radius={selected?.id === zone.id ? 11 : 8} pathOptions={{ color: "#fff", weight: 1.5, fillColor: heatColor(metric, zone[metric]), fillOpacity: 1 }} eventHandlers={{ click: () => setSelected(zone) }}><LeafletTooltip direction="top">{zone.name} · {zone[metric]}/100</LeafletTooltip></CircleMarker>)}
             </MapContainer>
           ) : <div className="heatmap-loading">Ubicando {businessForm.location.city}…</div>}
-          <div className="heatmap-map-label"><strong>Mapa de {meta.label.toLowerCase()}</strong><span>{metric === "supply" ? "Puntos reales + concentración" : "Estimación por área"}</span></div>
+          <div className="heatmap-map-label"><strong>{meta.label}</strong><span>{metric === "supply" ? "Puntos reales + concentración" : "Estimación por área"}</span></div>
           {metric === "supply" && <div className="heatmap-map-note">Toca un punto para ver el lugar registrado.</div>}
         </div>
 
