@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { providers } from "../data/mockData";
 import { providerKindLabel } from "../lib/matching";
 
 export default function StepDetail() {
   const { stepId } = useParams();
   const navigate = useNavigate();
-  const { steps, completeStep, team, toggleTeamProvider } = useApp();
+  const { steps, completeStep, team, toggleTeamProvider, catalogProviders: providers } = useApp();
   const [evidenceByStep, setEvidenceByStep] = useState<Record<string, string[]>>({});
 
   const step = steps.find((s) => s.id === stepId);

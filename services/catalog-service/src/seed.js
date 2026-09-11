@@ -1,169 +1,206 @@
-import { db } from "./db.js";
+import { pool } from "./db.js";
 
-// Mirrors web/src/data/mockData.ts (roadmapSteps, mentors, providers) so
-// this service's catalog and the frontend's built-in fallback agree until
-// the web app is switched over to fetch from here.
+// Mirrors web/src/data/mockData.ts (roadmapSteps, mentors, the original
+// seed providers) — kept as the fallback content that ships with the
+// frontend too, so the two agree until this becomes the sole source and
+// the frontend copy is deleted (see AGENTS.md "Known gaps").
 const roadmapSteps = [
   {
-    id: "legal-1",
+    id: "local-viability",
     level: 1,
-    title: "Registra tu negocio",
-    description: "Da de alta tu actividad económica ante el SAT / autoridad fiscal local.",
+    title: "Valida tu local y giro",
+    description: "Antes de firmar o invertir, confirma que tu actividad puede operar en esa ubicación.",
     category: "legal",
     xp: 100,
-    summary: "Antes de operar necesitas estar registrado fiscalmente. Esto te permite emitir facturas y evitar multas.",
+    summary: "El uso de suelo, la licencia de funcionamiento y los requisitos de apertura cambian por municipio. Primero confirma la viabilidad de tu giro en el domicilio exacto.",
     instructions: [
-      "Reúne tu identificación oficial y comprobante de domicilio.",
-      "Ingresa al portal oficial del SAT y elige el régimen de Actividad Empresarial simplificado.",
-      "Agenda tu cita (presencial o en línea) para la firma electrónica (e.firma).",
-      "Completa tu alta y guarda tu constancia de situación fiscal.",
+      "Define el giro concreto, el domicilio y si atenderás público, venderás alimentos, usarás gas o harás modificaciones al local.",
+      "Consulta en la ventanilla o portal de tu ayuntamiento si el uso de suelo permite ese giro y qué licencia de funcionamiento corresponde.",
+      "No firmes un contrato largo ni compres obra o equipo crítico antes de recibir esa orientación por escrito o mediante folio.",
+      "Guarda el folio, correo o documento de la consulta junto con la ficha de requisitos municipales.",
     ],
-    officialLabel: "Portal oficial del SAT",
-    officialUrl: "https://www.sat.gob.mx",
-    hasCost: false,
-    estimatedCost: null,
-    canDoOnline: true,
-    connectTo: ["mentores"],
-  },
-  {
-    id: "legal-2",
-    level: 1,
-    title: "Licencia de funcionamiento",
-    description: "Trámite municipal para operar en tu ubicación física.",
-    category: "legal",
-    xp: 100,
-    summary: "Cada municipio requiere una licencia de uso de suelo y funcionamiento antes de abrir al público.",
-    instructions: [
-      "Visita el portal de tu ayuntamiento o presidencia municipal.",
-      "Verifica el uso de suelo permitido para tu ubicación.",
-      "Presenta tu solicitud junto con el contrato de arrendamiento o escritura.",
-      "Paga el derecho correspondiente y da seguimiento a tu folio.",
-    ],
-    officialLabel: null,
-    officialUrl: null,
+    applicability: "base",
+    authority: "Ayuntamiento o alcaldía del domicilio del negocio",
+    evidence: ["Domicilio y giro definidos", "Folio, correo o respuesta municipal guardada", "Lista local de requisitos revisada"],
+    officialLinks: [{ label: "Buscador oficial de trámites", url: "https://www.gob.mx/tramites" }],
+    caution: "No existe una licencia municipal única para todo México. El costo, plazo y documentos dependen de tu municipio y actividad.",
     hasCost: true,
-    estimatedCost: "$800 - $3,500 MXN según municipio",
+    estimatedCost: "Por confirmar con tu municipio",
     canDoOnline: false,
-    connectTo: [],
-  },
-  {
-    id: "mentoria-1",
-    level: 1,
-    title: "Conéctate con un mentor",
-    description: "Habla con alguien que ya abrió un negocio como el tuyo.",
-    category: "mentoria",
-    xp: 150,
-    summary: "Aprende de errores ajenos antes de cometerlos. Conectamos tu perfil con mentores validados en tu giro.",
-    instructions: [
-      "Revisa los mentores sugeridos para tu categoría de negocio.",
-      "Agenda una primera llamada de diagnóstico (30 min).",
-      "Define con tu mentor los 3 riesgos principales de tu arranque.",
-    ],
-    officialLabel: null,
-    officialUrl: null,
-    hasCost: false,
-    estimatedCost: null,
-    canDoOnline: true,
     connectTo: ["mentores"],
   },
   {
-    id: "finanzas-1",
+    id: "sat-rfc",
     level: 1,
-    title: "Define tu presupuesto operativo",
-    description: "Estructura cómo se va a repartir tu inversión inicial.",
-    category: "finanzas",
-    xp: 120,
-    summary: "Un presupuesto claro evita quedarte sin efectivo en los primeros meses, el motivo más común de cierre temprano.",
-    instructions: [
-      "Divide tu presupuesto en: equipamiento, inventario inicial, renta/depósito, marketing y colchón de 3 meses.",
-      "Usa la plantilla sugerida dentro de la app para simular tu flujo de efectivo.",
-      "Ajusta según los datos de tu reporte de sector.",
-    ],
-    officialLabel: null,
-    officialUrl: null,
-    hasCost: false,
-    estimatedCost: null,
-    canDoOnline: true,
-    connectTo: ["proveedores"],
-  },
-  {
-    id: "marketing-1",
-    level: 2,
-    title: "Crea tus redes sociales",
-    description: "Presencia digital básica para empezar a captar clientes.",
-    category: "marketing",
+    title: "Obtén tu RFC",
+    description: "Inscribe tu actividad ante el SAT y conserva tu constancia fiscal.",
+    category: "legal",
     xp: 100,
-    summary: "Tus primeros clientes muy probablemente te van a encontrar en redes antes que caminando por la calle.",
+    summary: "El RFC te identifica ante el SAT. La inscripción correcta depende de tu situación personal y de cómo operarás; no asumas un régimen sin revisarlo.",
     instructions: [
-      "Crea perfil de negocio en Instagram y Facebook / Google Business Profile.",
-      "Publica tu ubicación, horarios y catálogo inicial.",
-      "Planea tu primer mes de contenido (3 publicaciones por semana).",
+      "Revisa el trámite de inscripción al RFC en el portal del SAT y prepara los documentos que te solicite.",
+      "Realiza la inscripción o agenda la cita indicada por el SAT para tu caso.",
+      "Descarga y guarda tu Constancia de Situación Fiscal cuando el trámite concluya.",
+      "Si ya tienes RFC, verifica que tu actividad y obligaciones sean coherentes con el negocio que abrirás.",
     ],
-    officialLabel: null,
-    officialUrl: null,
+    applicability: "base",
+    authority: "Servicio de Administración Tributaria (SAT)",
+    evidence: ["RFC inscrito o actualizado", "Constancia de Situación Fiscal resguardada"],
+    officialLinks: [{ label: "Inscripción y avisos al RFC · SAT", url: "https://www.sat.gob.mx/portal/public/tramites/inscripcion-y-aviso-al-rfc" }],
     hasCost: false,
-    estimatedCost: null,
-    canDoOnline: true,
-    connectTo: [],
-  },
-  {
-    id: "operaciones-1",
-    level: 2,
-    title: "Consigue proveedores clave",
-    description: "Asegura insumos y equipamiento con proveedores validados.",
-    category: "operaciones",
-    xp: 130,
-    summary: "Comparamos proveedores por precio, tiempo de entrega y reputación dentro de nuestro marketplace.",
-    instructions: [
-      "Explora el marketplace filtrando por tu categoría de negocio.",
-      "Solicita al menos 3 cotizaciones antes de decidir.",
-      "Cierra tu primer pedido de inventario.",
-    ],
-    officialLabel: null,
-    officialUrl: null,
-    hasCost: true,
-    estimatedCost: "Variable según proveedor",
-    canDoOnline: true,
-    connectTo: ["proveedores"],
-  },
-  {
-    id: "escalamiento-1",
-    level: 3,
-    title: "Automatiza flujos de trabajo",
-    description: "Sistematiza ventas, inventario y atención para escalar sin ti presente todo el tiempo.",
-    category: "escalamiento",
-    xp: 200,
-    summary: "Cuando tu negocio ya es estable, automatizar procesos es lo que te permite abrir una segunda sucursal.",
-    instructions: [
-      "Implementa un punto de venta (POS) con reportes automáticos.",
-      "Define procesos escritos para tus primeros empleados.",
-      "Evalúa métricas mensuales de margen y rotación de inventario.",
-    ],
-    officialLabel: null,
-    officialUrl: null,
-    hasCost: true,
-    estimatedCost: "Depende de las herramientas elegidas",
     canDoOnline: true,
     connectTo: ["mentores"],
   },
   {
-    id: "escalamiento-2",
+    id: "fiscal-setup",
+    level: 1,
+    title: "Prepara tu operación fiscal",
+    description: "Define obligaciones, habilita tu e.firma y deja lista la facturación.",
+    category: "legal",
+    xp: 150,
+    summary: "Tener RFC no basta: necesitas conocer tus obligaciones, conservar acceso a tus credenciales y estar listo para facturar de acuerdo con tu régimen.",
+    instructions: [
+      "Tramita o renueva tu e.firma cuando corresponda y resguarda sus archivos y contraseña de forma segura.",
+      "Confirma con SAT o con una persona contadora cuál régimen y cuáles declaraciones aplican a tu caso; no selecciones uno solo por conveniencia aparente.",
+      "Configura el medio de facturación que corresponda y realiza una prueba antes de vender.",
+      "Anota tus fechas de declaraciones y el responsable de revisar tus obligaciones periódicas.",
+    ],
+    applicability: "base",
+    authority: "SAT; contador o contadora para acompañamiento profesional",
+    evidence: ["e.firma vigente o cita registrada", "Régimen y obligaciones confirmados", "Prueba de facturación o plan de facturación documentado", "Calendario fiscal guardado"],
+    officialLinks: [
+      { label: "Obtén tu e.firma · SAT", url: "https://www.sat.gob.mx/gobmx/Paginas/ficha_105_cff.html" },
+      { label: "Portal del SAT", url: "https://www.sat.gob.mx/home" },
+    ],
+    hasCost: false,
+    canDoOnline: true,
+    connectTo: ["mentores"],
+  },
+  {
+    id: "municipal-opening",
+    level: 1,
+    title: "Gestiona apertura municipal",
+    description: "Integra licencias locales y confirma Protección Civil antes de abrir al público.",
+    category: "legal",
+    xp: 120,
+    summary: "Con la viabilidad del local validada, integra los trámites municipales que te indicaron. Protección Civil también se revisa con la autoridad local según el inmueble y actividad.",
+    instructions: [
+      "Reúne los documentos y planos que el municipio haya solicitado para licencia de funcionamiento o apertura.",
+      "Presenta la solicitud municipal y guarda el acuse o folio de seguimiento.",
+      "Consulta a Protección Civil municipal si tu local requiere programa, visto bueno, capacitación, señalización o inspección.",
+      "No abras al público hasta cumplir lo que determine tu municipio para tu actividad y local.",
+    ],
+    applicability: "base",
+    authority: "Ayuntamiento o alcaldía y Protección Civil municipal",
+    evidence: ["Solicitud o licencia municipal resguardada", "Requisitos de Protección Civil confirmados", "Acuse, dictamen o evidencia que corresponda al local"],
+    officialLinks: [{ label: "Buscador oficial de trámites", url: "https://www.gob.mx/tramites" }],
+    caution: "Los requisitos de Protección Civil y apertura no son idénticos en todos los municipios; confirma la versión vigente con la autoridad local.",
+    hasCost: true,
+    estimatedCost: "Variable según municipio, inmueble y giro",
+    canDoOnline: false,
+    connectTo: ["mentores", "proveedores"],
+  },
+  {
+    id: "sector-permits",
+    level: 2,
+    title: "Revisa permisos del giro",
+    description: "Identifica requisitos sanitarios, ambientales o especiales que puedan aplicar a tu actividad.",
+    category: "legal",
+    xp: 100,
+    summary: "No todos los negocios requieren las mismas autorizaciones. Alimentos, bebidas, salud, cosméticos, alcohol, anuncios y actividades con impacto ambiental pueden requerir gestiones adicionales.",
+    instructions: [
+      "Describe tu actividad exacta y consulta con la autoridad competente si tu giro requiere aviso, permiso, responsable o inspección adicional.",
+      "Para productos o servicios sujetos a control sanitario, revisa si procede el Aviso de Funcionamiento de COFEPRIS.",
+      "Pregunta en tu municipio por permisos específicos, como venta de alcohol, anuncios, manejo de residuos o impacto ambiental, si aplican.",
+      "Guarda una respuesta, acuse o nota profesional que justifique si este paso aplica o no a tu negocio.",
+    ],
+    applicability: "conditional",
+    authority: "COFEPRIS y autoridades estatales o municipales según el giro",
+    evidence: ["Giro y actividades de riesgo revisados", "Aviso, permiso o confirmación de no aplicación resguardada", "Requisitos especiales incluidos en tu bitácora"],
+    officialLinks: [
+      { label: "Aviso de Funcionamiento · COFEPRIS", url: "https://www.gob.mx/cofepris/acciones-y-programas/aviso-de-funcionamiento-de-responsable-sanitario-y-de-modificacion-o-baja" },
+      { label: "DIGIPRiS · trámites COFEPRIS", url: "https://www.gob.mx/cofepris/acciones-y-programas/digipris-plataforma-de-tramites-y-servicios-de-la-cofepris?state=published" },
+    ],
+    caution: "Este paso puede no aplicar a todos los giros. Marcarlo como revisado significa que verificaste tu caso, no que Tlacuachic determina el permiso por ti.",
+    hasCost: true,
+    estimatedCost: "Depende del permiso y autoridad aplicable",
+    canDoOnline: true,
+    connectTo: ["mentores"],
+  },
+  {
+    id: "employment-imss",
+    level: 2,
+    title: "Formaliza la contratación",
+    description: "Si vas a contratar, registra el centro de trabajo y prepara tus obligaciones laborales.",
+    category: "legal",
+    xp: 130,
+    summary: "Este paso se activa si tendrás personas trabajadoras. El alta patronal, la inscripción al IMSS y las obligaciones laborales deben estar listas antes de operar con personal.",
+    instructions: [
+      "Confirma si contratarás personal desde el arranque o durante la siguiente etapa del negocio.",
+      "Si corresponde, realiza la inscripción patronal ante el IMSS y prepara los datos necesarios para el alta de tus personas trabajadoras.",
+      "Revisa contratos, nómina, jornada, capacitación y condiciones de seguridad con asesoría profesional.",
+      "Conserva los acuses y un calendario de movimientos e incidencias de nómina.",
+    ],
+    applicability: "conditional",
+    authority: "IMSS y Secretaría del Trabajo y Previsión Social (STPS)",
+    evidence: ["Decisión de contratación registrada", "Alta patronal y movimientos al IMSS, si aplican", "Documentación laboral y responsable de nómina definidos"],
+    officialLinks: [
+      { label: "Inscripción patronal persona física · IMSS", url: "https://www.imss.gob.mx/tramites/imss02001a" },
+      { label: "Ley Federal del Trabajo · STPS", url: "https://www.stps.gob.mx/gobmx/estadisticas/siaat/ley_federal_del_trabajo.pdf" },
+    ],
+    caution: "Si aún no tendrás personal, documenta esa decisión y vuelve a este paso antes de la primera contratación.",
+    hasCost: true,
+    estimatedCost: "Cuotas y costos según nómina, riesgo y caso laboral",
+    canDoOnline: true,
+    connectTo: ["mentores"],
+  },
+  {
+    id: "operational-ready",
     level: 3,
-    title: "Abre tu segunda sucursal",
-    description: "Replica tu modelo validado en una nueva ubicación.",
+    title: "Abre con controles listos",
+    description: "Convierte permisos, proveedores y presupuesto en una operación diaria controlada.",
+    category: "operaciones",
+    xp: 200,
+    summary: "La apertura segura no termina con un trámite. Debes poder facturar, comprar con evidencia, controlar efectivo e inventario y responder ante una inspección.",
+    instructions: [
+      "Define responsables y fechas para obligaciones fiscales, renovación de licencias y controles de seguridad.",
+      "Selecciona proveedores y conserva cotizaciones, contratos, comprobantes y garantías relevantes.",
+      "Prepara un control simple de ventas, gastos, inventario y efectivo que puedas revisar semanalmente.",
+      "Guarda en una carpeta tu bitácora de formalización: RFC, permisos, acuses, contratos y comprobantes.",
+    ],
+    applicability: "base",
+    authority: "Propietario del negocio; SAT y autoridades locales según el trámite",
+    evidence: ["Bitácora de cumplimiento creada", "Responsables y fechas periódicas asignados", "Control de ventas, gastos e inventario listo", "Proveedores críticos evaluados"],
+    officialLinks: [{ label: "Portal del SAT", url: "https://www.sat.gob.mx/home" }],
+    hasCost: true,
+    estimatedCost: "Variable según herramientas e insumos elegidos",
+    canDoOnline: true,
+    connectTo: ["mentores", "proveedores"],
+  },
+  {
+    id: "brand-and-growth",
+    level: 3,
+    title: "Protege tu marca y mejora",
+    description: "Después de operar estable, documenta tu modelo y evalúa proteger tu nombre comercial.",
     category: "escalamiento",
     xp: 250,
-    summary: "Con datos de al menos 12 meses puedes evaluar si tu modelo es replicable en otra zona.",
+    summary: "Registrar una marca no es el requisito que abre un negocio, pero puede evitar conflictos cuando el modelo ya tiene tracción. Primero busca antecedentes y recibe asesoría si decides avanzar.",
     instructions: [
-      "Analiza zonas con demanda similar usando tu reporte de sector.",
-      "Valida el presupuesto de apertura con tu mentor.",
-      "Contrata y capacita a tu primer gerente de sucursal.",
+      "Revisa si existen marcas similares antes de invertir en identidad, letreros o campañas de largo plazo.",
+      "Documenta los procesos que funcionaron y tus métricas mensuales de operación.",
+      "Evalúa con un especialista si conviene iniciar el registro de marca ante el IMPI.",
+      "Usa las señales de ubicación para explorar una segunda zona solo cuando la primera operación sea estable.",
     ],
-    officialLabel: null,
-    officialUrl: null,
+    applicability: "recommended",
+    authority: "Instituto Mexicano de la Propiedad Industrial (IMPI)",
+    evidence: ["Búsqueda de antecedentes realizada", "Procesos y métricas base documentados", "Decisión de protección de marca registrada"],
+    officialLinks: [
+      { label: "Busca marcas · MARCia IMPI", url: "https://marcia.impi.gob.mx/marcas/search/quick" },
+      { label: "ClasNiza · IMPI", url: "https://clasniza.impi.gob.mx/" },
+    ],
     hasCost: true,
-    estimatedCost: "Similar a tu inversión inicial",
-    canDoOnline: false,
+    estimatedCost: "Variable según clase, trámite y asesoría",
+    canDoOnline: true,
     connectTo: ["mentores", "proveedores"],
   },
 ];
@@ -176,45 +213,50 @@ const mentors = [
 ];
 
 const providers = [
-  { id: "p1", name: "Café Altura Mayor", category: "cafeteria", type: "producto", location: "CDMX, México", rating: 4.8, description: "Proveedor de café en grano de origen, mínimo 10kg." },
-  { id: "p2", name: "Muebles Industriales RM", category: "cafeteria", type: "producto", location: "Puebla, México", rating: 4.5, description: "Mobiliario para cafeterías y restaurantes, hecho a medida." },
-  { id: "p3", name: "Plomería Express", category: "general", type: "servicio", location: "CDMX, México", rating: 4.7, description: "Instalación y mantenimiento para locales comerciales." },
-  { id: "p4", name: "Distribuidora de Cubiertos GO", category: "restaurante", type: "producto", location: "Guadalajara, México", rating: 4.4, description: "Cubiertos, vajilla y desechables al mayoreo." },
-  { id: "p5", name: "Electricistas del Valle", category: "general", type: "servicio", location: "Monterrey, México", rating: 4.9, description: "Instalaciones eléctricas certificadas para negocios." },
+  { id: "p-abogado-1", name: "Despacho Ortega & Lira", kind: "abogado", category: "general", type: "servicio", location: "Ciudad de México, México", city: "Ciudad de México", rating: 4.9, description: "Uso de suelo, licencias municipales y contratos de arrendamiento para locales comerciales. Primera consulta sin costo.", helpsWith: ["local-viability", "municipal-opening", "brand-and-growth"] },
+  { id: "p-abogado-2", name: "Lic. Mariana Cuevas", kind: "abogado", category: "general", type: "servicio", location: "Guadalajara, México", city: "Guadalajara", rating: 4.7, description: "Permisos sanitarios y regulatorios para alimentos, bebidas y salud. Registro de marca ante el IMPI.", helpsWith: ["sector-permits", "brand-and-growth"] },
+  { id: "p-contador-1", name: "Contadora Elena Ruiz", kind: "contador", category: "general", type: "servicio", location: "Ciudad de México, México", city: "Ciudad de México", rating: 4.8, description: "Alta en el SAT, elección de régimen, e.firma y facturación para negocios que empiezan. Explica sin tecnicismos.", helpsWith: ["sat-rfc", "fiscal-setup", "operational-ready"] },
+  { id: "p-contador-2", name: "Núñez Contadores", kind: "contador", category: "general", type: "servicio", location: "Monterrey, México", city: "Monterrey", rating: 4.6, description: "Nómina, alta patronal ante el IMSS y obligaciones laborales para micro y pequeñas empresas.", helpsWith: ["employment-imss", "fiscal-setup"] },
+  { id: "p-asesor-1", name: "Rodrigo Salas · Asesor financiero", kind: "asesor-financiero", category: "general", type: "servicio", location: "Puebla, México", city: "Puebla", rating: 4.7, description: "Presupuesto de arranque, flujo de efectivo y colchón operativo. Trabaja por sesión, sin comisiones ocultas.", helpsWith: ["operational-ready", "local-viability"] },
+  { id: "p-marketing-1", name: "Estudio Nopal", kind: "marketing", category: "general", type: "servicio", location: "Ciudad de México, México", city: "Ciudad de México", rating: 4.5, description: "Identidad, redes sociales y presencia en mapas para negocios de barrio. Paquetes desde una semana de trabajo.", helpsWith: ["brand-and-growth", "operational-ready"] },
+  { id: "p-marketing-ai", name: "Agente de marketing Tlacuachic", kind: "marketing", isAI: true, category: "general", type: "servicio", location: "En línea", city: "En línea", rating: 4.3, description: "Agente de IA que redacta tu perfil de negocio, primeras publicaciones y un plan de contenido de 30 días. Revisas y apruebas cada pieza.", helpsWith: ["brand-and-growth"] },
+  { id: "p-gestoria-1", name: "Gestoría Trámite Fácil", kind: "gestoria", category: "general", type: "servicio", location: "Ciudad de México, México", city: "Ciudad de México", rating: 4.4, description: "Acompañamiento en ventanilla municipal, Protección Civil y avisos ante COFEPRIS. Cobra por trámite concluido.", helpsWith: ["municipal-opening", "sector-permits", "local-viability"] },
+  { id: "p-insumos-1", name: "Café Altura Mayor", kind: "insumos", category: "cafeteria", type: "producto", location: "Ciudad de México, México", city: "Ciudad de México", rating: 4.8, description: "Proveedor de café en grano de origen, mínimo 10 kg, con factura.", helpsWith: ["operational-ready"] },
+  { id: "p-insumos-2", name: "Distribuidora de Cubiertos GO", kind: "insumos", category: "restaurante", type: "producto", location: "Guadalajara, México", city: "Guadalajara", rating: 4.4, description: "Cubiertos, vajilla y desechables al mayoreo, con factura.", helpsWith: ["operational-ready"] },
 ];
 
-export function seedIfEmpty() {
-  const { count } = db.prepare("SELECT COUNT(*) AS count FROM roadmap_steps").get();
-  if (count > 0) return;
+export async function seedIfEmpty() {
+  const { rows } = await pool.query("SELECT COUNT(*)::int AS count FROM tlacuachic_roadmap_steps");
+  if (rows[0].count > 0) return;
 
-  const insertStep = db.prepare(`
-    INSERT INTO roadmap_steps
-      (id, level, title, description, category, xp, summary, instructions, official_label, official_url, has_cost, estimated_cost, can_do_online, connect_to)
-    VALUES (@id, @level, @title, @description, @category, @xp, @summary, @instructions, @officialLabel, @officialUrl, @hasCost, @estimatedCost, @canDoOnline, @connectTo)
-  `);
-  const insertMentor = db.prepare(`
-    INSERT INTO mentors (id, name, expertise, businesses_opened, location, rating, avatar_color)
-    VALUES (@id, @name, @expertise, @businessesOpened, @location, @rating, @avatarColor)
-  `);
-  const insertProvider = db.prepare(`
-    INSERT INTO providers (id, name, category, type, location, rating, description)
-    VALUES (@id, @name, @category, @type, @location, @rating, @description)
-  `);
-
-  const seedAll = db.transaction(() => {
-    for (const s of roadmapSteps) {
-      insertStep.run({
-        ...s,
-        instructions: JSON.stringify(s.instructions),
-        connectTo: JSON.stringify(s.connectTo),
-        hasCost: s.hasCost ? 1 : 0,
-        canDoOnline: s.canDoOnline ? 1 : 0,
-      });
+  await pool.query("BEGIN");
+  try {
+    for (let i = 0; i < roadmapSteps.length; i++) {
+      const s = roadmapSteps[i];
+      await pool.query(
+        `INSERT INTO tlacuachic_roadmap_steps
+           (id, position, level, title, description, category, xp, summary, instructions, applicability, authority, evidence, official_links, caution, has_cost, estimated_cost, can_do_online, connect_to)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+        [s.id, i, s.level, s.title, s.description, s.category, s.xp, s.summary, JSON.stringify(s.instructions), s.applicability, s.authority, JSON.stringify(s.evidence), JSON.stringify(s.officialLinks), s.caution ?? null, s.hasCost, s.estimatedCost ?? null, s.canDoOnline, JSON.stringify(s.connectTo)]
+      );
     }
-    for (const m of mentors) insertMentor.run(m);
-    for (const p of providers) insertProvider.run(p);
-  });
-
-  seedAll();
-  console.log(`[catalog-service] seeded ${roadmapSteps.length} steps, ${mentors.length} mentors, ${providers.length} providers`);
+    for (const m of mentors) {
+      await pool.query(
+        `INSERT INTO tlacuachic_mentors (id, name, expertise, businesses_opened, location, rating, avatar_color) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [m.id, m.name, m.expertise, m.businessesOpened, m.location, m.rating, m.avatarColor]
+      );
+    }
+    for (const p of providers) {
+      await pool.query(
+        `INSERT INTO tlacuachic_providers (id, user_id, name, kind, is_ai, category, type, location, city, country, rating, description, helps_with)
+         VALUES ($1, NULL, $2,$3,$4,$5,$6,$7,$8,'Mexico',$9,$10,$11)`,
+        [p.id, p.name, p.kind, Boolean(p.isAI), p.category, p.type, p.location, p.city, p.rating, p.description, JSON.stringify(p.helpsWith)]
+      );
+    }
+    await pool.query("COMMIT");
+    console.log(`[catalog-service] seeded ${roadmapSteps.length} steps, ${mentors.length} mentors, ${providers.length} demo providers`);
+  } catch (err) {
+    await pool.query("ROLLBACK");
+    throw err;
+  }
 }

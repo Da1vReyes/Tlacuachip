@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { roadmapSteps } from "../data/mockData";
 import { providerKindLabel } from "../lib/matching";
 import type { ProviderKind } from "../types";
 
@@ -9,7 +8,7 @@ const kinds = Object.keys(providerKindLabel) as ProviderKind[];
 
 export default function ProviderSignup() {
   const navigate = useNavigate();
-  const { user, providerProfile, saveProviderProfile, setRole } = useApp();
+  const { user, providerProfile, saveProviderProfile, setRole, steps: roadmapSteps } = useApp();
 
   const [name, setName] = useState(providerProfile?.name ?? "");
   const [kind, setKind] = useState<ProviderKind>(providerProfile?.kind ?? "contador");

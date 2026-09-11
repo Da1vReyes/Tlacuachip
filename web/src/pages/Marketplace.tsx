@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { providers } from "../data/mockData";
 import { providerKindLabel } from "../lib/matching";
+import { useApp } from "../context/AppContext";
 
 export default function Marketplace() {
   const navigate = useNavigate();
+  const { catalogProviders: providers } = useApp();
 
   return (
     <div className="stack" style={{ gap: 20 }}>

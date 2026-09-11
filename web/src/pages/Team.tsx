@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { providers } from "../data/mockData";
 import { getAiStatus, postJson, type AiStatus } from "../lib/api";
 import { buildMinimizedProfile, describeMinimizedProfile, NEVER_SHARED } from "../lib/privacy";
 import { providerKindLabel, rankProviders, toRecommendations } from "../lib/matching";
@@ -17,7 +16,7 @@ interface MatchResponse {
 
 export default function Team() {
   const navigate = useNavigate();
-  const { businessForm, preferences, steps, team, toggleTeamProvider } = useApp();
+  const { businessForm, preferences, steps, team, toggleTeamProvider, catalogProviders: providers } = useApp();
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
   const [showPayload, setShowPayload] = useState(false);
   const [loading, setLoading] = useState(false);

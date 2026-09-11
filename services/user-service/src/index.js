@@ -32,6 +32,7 @@ import {
   validateReportBlob,
 } from "./validate.js";
 import { rateLimit } from "./ratelimit.js";
+import { syncProviderToCatalog, removeProviderFromCatalog } from "./catalogSync.js";
 
 await migrate();
 
@@ -241,7 +242,9 @@ app.get("/api/me/provider-profile", async (req, res, next) => {
 app.put("/api/me/provider-profile", async (req, res, next) => {
   try {
     const profile = validateProviderProfile(req.body);
-    res.json(await upsertProviderProfile(req.userId, profile));
+    const saved = await upsertProviderProfile(req.userId, profile);
+    syncProviderToCatalog(req.userId, profile); // fire-and-forget, see catalogSync.js
+    res.json(saved);
   } catch (err) {
     if (handleValidation(err, res)) return;
     next(err);
@@ -268,6 +271,7 @@ app.post("/api/me/team/:providerId/toggle", async (req, res, next) => {
 app.delete("/api/me", async (req, res, next) => {
   try {
     await deleteUser(req.userId);
+    removeProviderFromCatalog(req.userId); // fire-and-forget, see catalogSync.js
     res.status(204).end();
   } catch (err) {
     next(err);

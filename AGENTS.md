@@ -73,9 +73,11 @@ tlacuachic/
 │   │                       teams. Real Postgres (see .env.example), JWT
 │   │                       auth, every route scoped to the caller's own
 │   │                       account (`/api/me/*`, never a client-sent id).
-│   └── catalog-service/    NOT wired to anything. Roadmap steps, mentors,
-│                           suppliers. Still SQLite, still the old schema —
-│                           see "Known gaps".
+│   └── catalog-service/    WIRED IN. Roadmap steps, mentors, providers.
+│                           Real Postgres, public GET routes, and an
+│                           internal-key-protected PUT/DELETE that
+│                           user-service calls to keep real provider
+│                           signups in the public roster (see below).
 └── design/                Source `.dc.html` for the click-through concept
                             prototype (Claude Design canvas) — not part of
                             the shipped app, keep for pitching/iterating.
@@ -162,6 +164,32 @@ There's no test suite yet (hackathon timeline). If you add non-trivial logic
   and sent a returning user with a saved business back to the wizard. See
   "No stale closures" below — same root cause as the `BusinessForm.tsx` one,
   different screen.
+- **The catalog is real too** (`services/catalog-service`): roadmap steps,
+  mentors, and providers live in Postgres, seeded once on first boot from
+  the same content that used to live only in `web/src/data/mockData.ts`
+  (that file is still imported as the initial state and offline fallback —
+  don't delete it). `AppContext` fetches `/api/roadmap-steps`,
+  `/api/mentors`, `/api/providers` once on mount and exposes them as
+  `steps`, `mentors`, `catalogProviders` from `useApp()`. Pages that used to
+  `import { providers, mentors, roadmapSteps } from "../data/mockData"`
+  directly (`Team.tsx`, `Marketplace.tsx`, `StepDetail.tsx`,
+  `Dashboard.tsx`, `Mentors.tsx`, `ProviderSignup.tsx`,
+  `ProviderDashboard.tsx`) now read them from context instead — **don't
+  reintroduce a direct `mockData` import for these three** in a page
+  component, or it'll silently show stale demo data instead of the real
+  roster.
+  The part that actually makes the marketplace real: when a user saves a
+  provider profile (`PUT /api/me/provider-profile` in `user-service`), that
+  route also calls `PUT /api/providers/:userId` on `catalog-service`
+  (`services/user-service/src/catalogSync.js`), authenticated with a shared
+  `x-internal-key` header — not a user JWT, since `catalog-service` has no
+  concept of auth. Account deletion calls the matching `DELETE` route. Both
+  calls are fire-and-forget (logged on failure, never thrown) — same
+  graceful-degradation posture as everything else here. Verified
+  end-to-end: signed up a fresh provider account, saved a provider profile,
+  confirmed the new row in `tlacuachic_providers` (`user_id` set) via a
+  direct `GET /api/providers` call, confirmed it rendered on `/marketplace`
+  in the browser, then deleted the account and confirmed the row was gone.
 - **The market report is generated, not mock**, since `POST /api/report`
   (`server/src/report.js`) landed: it geocodes the business's city, counts
   REAL nearby similar businesses via Overpass, and asks the model to reason
@@ -296,10 +324,6 @@ file unless you have a concrete reason; they're flagged, not broken.
   20/min/IP** (`services/user-service/src/index.js → authLimiter`) — no
   account lockout, no CAPTCHA. Someone can brute-force a weak password
   slowly. Fine for a hackathon demo, not for real user data.
-- **`catalog-service` still runs on SQLite and old schema/step ids**
-  (mentors, providers, roadmap steps) and isn't wired to anything — the
-  provider roster shown in the app is still `web/src/data/mockData.ts`
-  seed data (see below). `user-service` is the one that moved to Postgres.
 - **No tests.** Priority if this continues: the scoring math
   (`opportunityFrom` in `Heatmap.tsx`, `scoreFromCount` in
   `server/src/zones.js`) and the zone-bucketing geometry, since those are
@@ -314,13 +338,9 @@ file unless you have a concrete reason; they're flagged, not broken.
   could burn through Overpass's shared quota if hammered. Add `aiLimiter`
   (or a separate, larger-quota limiter) to it before this goes anywhere
   public.
-- **The provider roster is seed data** (`web/src/data/mockData.ts →
-  providers`). A real provider signing up today only persists locally
-  (`providerProfile` in `AppContext`) and isn't added to the roster other
-  users see — wiring that needs `services/catalog-service` (whose schema is
-  now behind: it still has the old `type/category` provider shape and the
-  old roadmap step ids). Update its `schema.sql` + `seed.js` before cutting
-  over.
+- **`catalog-service` has no rate limit tuned for it yet** — `publicLimiter`
+  is a flat 120/min/IP on all three public GET routes, never load-tested.
+  Fine for a demo, revisit if this ever sees real traffic.
 - **Contacting a provider isn't built** — "Guardar en mi equipo" persists a
   list; there's no messaging or deal flow yet, so the commission revenue
   stream described on the landing page has no mechanism behind it.
