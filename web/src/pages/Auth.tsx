@@ -4,7 +4,7 @@ import { useApp } from "../context/AppContext";
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { login, businessForm } = useApp();
+  const { login, businessForm, preferences, savePreferences } = useApp();
   const [mode, setMode] = useState<"login" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -13,7 +13,7 @@ export default function Auth() {
     e.preventDefault();
     if (!email) return;
     login(email, name || undefined);
-    navigate(businessForm ? "/reporte" : "/formulario");
+    navigate(businessForm ? (preferences.onboardingComplete ? "/dashboard" : "/onboarding/mapa") : "/formulario");
   };
 
   return (
@@ -48,6 +48,25 @@ export default function Auth() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
+
+        {mode === "signup" && (
+          <fieldset className="privacy-choice">
+            <legend>Tu privacidad en la red</legend>
+            <p>La compartición se puede cambiar o eliminar por completo desde Configuración.</p>
+            <label className={`privacy-option${preferences.visibility === "business" ? " selected" : ""}`}>
+              <input type="radio" name="visibility" checked={preferences.visibility === "business"} onChange={() => savePreferences({ visibility: "business" })} />
+              <span><strong>Solo datos clave del negocio</strong><small>Giro, ciudad y etapa. Recomendado para encontrar apoyo sin exponer tu perfil.</small></span>
+            </label>
+            <label className={`privacy-option${preferences.visibility === "profile" ? " selected" : ""}`}>
+              <input type="radio" name="visibility" checked={preferences.visibility === "profile"} onChange={() => savePreferences({ visibility: "profile" })} />
+              <span><strong>Perfil completo para la red</strong><small>Permite que mentores y proveedores te contacten con contexto.</small></span>
+            </label>
+            <label className={`privacy-option${preferences.visibility === "private" ? " selected" : ""}`}>
+              <input type="radio" name="visibility" checked={preferences.visibility === "private"} onChange={() => savePreferences({ visibility: "private" })} />
+              <span><strong>Mantener todo privado</strong><small>Usas Tlacuachip sin aparecer en búsquedas de la comunidad.</small></span>
+            </label>
+          </fieldset>
+        )}
         <div className="field">
           <label htmlFor="password">Contraseña</label>
           <input id="password" type="password" required placeholder="••••••••" />

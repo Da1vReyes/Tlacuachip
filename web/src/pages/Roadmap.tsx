@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import type { ComponentType } from "react";
 import { useApp } from "../context/AppContext";
 import { IconCheck, IconLock, IconForm, IconUsers, IconChart, IconChat, IconBag, IconRoute } from "../components/icons";
 
-const categoryIcon: Record<string, (props: { size?: number }) => JSX.Element> = {
+const categoryIcon: Record<string, ComponentType<{ size?: number }>> = {
   legal: IconForm,
   mentoria: IconUsers,
   finanzas: IconChart,

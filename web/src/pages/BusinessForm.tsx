@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { generateMockReport } from "../data/mockData";
@@ -15,7 +15,7 @@ import {
   IconCheck,
 } from "../components/icons";
 
-const categories: { value: BusinessCategory; label: string; icon: (p: { size?: number }) => JSX.Element }[] = [
+const categories: { value: BusinessCategory; label: string; icon: ComponentType<{ size?: number }> }[] = [
   { value: "cafeteria", label: "Cafetería", icon: IconCoffee },
   { value: "restaurante", label: "Restaurante", icon: IconUtensils },
   { value: "tienda-abarrotes", label: "Abarrotes", icon: IconBasket },
@@ -75,7 +75,7 @@ export default function BusinessForm() {
     };
     saveBusinessForm(form);
     saveReport(generateMockReport(form));
-    navigate(user ? "/reporte" : "/auth");
+    navigate(user ? "/onboarding/mapa" : "/auth");
   };
 
   const goNext = () => {

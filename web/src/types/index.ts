@@ -24,6 +24,16 @@ export interface BusinessFormData {
   experience: "ninguna" | "poca" | "intermedia" | "experto";
 }
 
+export type ProfileVisibility = "private" | "business" | "profile";
+
+export interface DataPreferences {
+  visibility: ProfileVisibility;
+  locationPrecision: "city" | "zone";
+  onboardingComplete: boolean;
+  selectedZoneId?: string;
+  locationMode?: "explore" | "existing";
+}
+
 export interface ReportSource {
   name: string;
   publisher: string;

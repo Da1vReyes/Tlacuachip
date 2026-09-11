@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { BusinessFormData, ReportData, User, UserProgress } from "../types";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import type { BusinessFormData, DataPreferences, ReportData, User, UserProgress } from "../types";
 import { roadmapSteps as initialSteps } from "../data/mockData";
 import type { RoadmapStep } from "../types";
 
@@ -8,12 +8,15 @@ interface AppState {
   businessForm: BusinessFormData | null;
   report: ReportData | null;
   progress: UserProgress;
+  preferences: DataPreferences;
   steps: RoadmapStep[];
   login: (email: string, name?: string) => void;
   logout: () => void;
   saveBusinessForm: (form: BusinessFormData) => void;
   saveReport: (report: ReportData) => void;
   completeStep: (stepId: string) => void;
+  savePreferences: (preferences: Partial<DataPreferences>) => void;
+  deleteAllData: () => void;
 }
 
 const STORAGE_KEY = "emprende-mvp-state";
@@ -47,7 +50,14 @@ interface Persisted {
   businessForm: BusinessFormData | null;
   report: ReportData | null;
   progress: UserProgress;
+  preferences: DataPreferences;
 }
+
+const defaultPreferences: DataPreferences = {
+  visibility: "business",
+  locationPrecision: "city",
+  onboardingComplete: false,
+};
 
 // Read synchronously during the first render (via useState's lazy
 // initializer) instead of in an effect. Loading this in an effect meant
@@ -59,16 +69,17 @@ interface Persisted {
 function loadPersisted(): Persisted {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { user: null, businessForm: null, report: null, progress: defaultProgress };
+    if (!raw) return { user: null, businessForm: null, report: null, progress: defaultProgress, preferences: defaultPreferences };
     const parsed = JSON.parse(raw);
     return {
       user: parsed.user ?? null,
       businessForm: parsed.businessForm ?? null,
       report: parsed.report ?? null,
       progress: parsed.progress ?? defaultProgress,
+      preferences: { ...defaultPreferences, ...(parsed.preferences ?? {}) },
     };
   } catch {
-    return { user: null, businessForm: null, report: null, progress: defaultProgress };
+    return { user: null, businessForm: null, report: null, progress: defaultProgress, preferences: defaultPreferences };
   }
 }
 
@@ -78,13 +89,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [businessForm, setBusinessForm] = useState<BusinessFormData | null>(persisted.businessForm);
   const [report, setReport] = useState<ReportData | null>(persisted.report);
   const [progress, setProgress] = useState<UserProgress>(persisted.progress);
+  const [preferences, setPreferences] = useState<DataPreferences>(persisted.preferences);
+  const skipNextPersist = useRef(false);
 
   useEffect(() => {
+    if (skipNextPersist.current) {
+      skipNextPersist.current = false;
+      return;
+    }
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ user, businessForm, report, progress })
+      JSON.stringify({ user, businessForm, report, progress, preferences })
     );
-  }, [user, businessForm, report, progress]);
+  }, [user, businessForm, report, progress, preferences]);
 
   const steps = unlockNextSteps(initialSteps, progress.completedSteps);
 
@@ -92,6 +109,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const logout = () => setUser(null);
   const saveBusinessForm = (form: BusinessFormData) => setBusinessForm(form);
   const saveReport = (r: ReportData) => setReport(r);
+  const savePreferences = (next: Partial<DataPreferences>) => setPreferences((previous) => ({ ...previous, ...next }));
+  const deleteAllData = () => {
+    skipNextPersist.current = true;
+    localStorage.removeItem(STORAGE_KEY);
+    setUser(null);
+    setBusinessForm(null);
+    setReport(null);
+    setProgress(defaultProgress);
+    setPreferences(defaultPreferences);
+  };
 
   const completeStep = (stepId: string) => {
     setProgress((prev) => {
@@ -110,7 +137,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ user, businessForm, report, progress, steps, login, logout, saveBusinessForm, saveReport, completeStep }}
+      value={{ user, businessForm, report, progress, preferences, steps, login, logout, saveBusinessForm, saveReport, completeStep, savePreferences, deleteAllData }}
     >
       {children}
     </AppContext.Provider>
