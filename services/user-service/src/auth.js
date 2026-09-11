@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET is required — copy .env.example to .env and set it.");
+  throw new Error("JWT_SECRET is required — copy e.env.example to e.env and set it.");
 }
 
 const JWT_SECRET = process.env.JWT_SECRET;

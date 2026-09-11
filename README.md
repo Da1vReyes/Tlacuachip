@@ -48,11 +48,11 @@ Open the URL Vite prints. `user-service` and `catalog-service` both need a
 Postgres database (can be the same one — they use their own tables):
 
 ```bash
-cp services/user-service/.env.example services/user-service/.env
+cp services/user-service/e.env.example services/user-service/e.env
 # set DATABASE_URL, JWT_SECRET (see the file's own comment for a one-line
 # command to generate one), and CATALOG_INTERNAL_API_KEY
 
-cp services/catalog-service/.env.example services/catalog-service/.env
+cp services/catalog-service/e.env.example services/catalog-service/e.env
 # set DATABASE_URL and INTERNAL_API_KEY — must match CATALOG_INTERNAL_API_KEY above
 ```
 
@@ -66,7 +66,7 @@ recommendations.
 To turn on the AI features (team matching, report interpretation):
 
 ```bash
-cp server/.env.example server/.env   # then set OPENROUTER_API_KEY
+cp server/e.env.example server/e.env   # then set OPENROUTER_API_KEY
 ```
 
 The key stays on the server. The UI tells you whether the AI is configured.
