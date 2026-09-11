@@ -3,6 +3,7 @@ export type UserRole = "entrepreneur" | "provider";
 export interface User {
   email: string;
   name?: string;
+  avatarUrl?: string;
   role?: UserRole;
 }
 
@@ -85,6 +86,9 @@ export interface ReportData {
   /** Whether localBusinessCount actually came from OpenStreetMap this time
    * (vs. defaulting to 0 because Overpass didn't answer). */
   osmAvailable: boolean;
+  /** Source of the real local-offer count. Kept optional for reports saved
+   * before the DENUE integration. */
+  marketSource?: "inegi_denue_snapshot" | "openstreetmap" | string | null;
 }
 
 export type StepStatus = "locked" | "available" | "in-progress" | "completed";
@@ -131,6 +135,7 @@ export interface Provider {
   name: string;
   kind: ProviderKind;
   isAI?: boolean;
+  isDemo?: boolean;
   category: string;
   type: "producto" | "servicio";
   location: string;

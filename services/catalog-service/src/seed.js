@@ -8,22 +8,25 @@ const roadmapSteps = [
   {
     id: "local-viability",
     level: 1,
-    title: "Valida tu local y giro",
-    description: "Antes de firmar o invertir, confirma que tu actividad puede operar en esa ubicación.",
+    title: "Valida tu local y giro en CDMX",
+    description: "Piloto CDMX: antes de firmar o invertir, confirma que tu actividad puede operar en esa ubicación.",
     category: "legal",
     xp: 100,
-    summary: "El uso de suelo, la licencia de funcionamiento y los requisitos de apertura cambian por municipio. Primero confirma la viabilidad de tu giro en el domicilio exacto.",
+    summary: "Piloto CDMX: un establecimiento de bajo impacto opera con aviso en SIAPEM; además debes revisar que el uso de suelo sea compatible con tu actividad y domicilio exacto.",
     instructions: [
       "Define el giro concreto, el domicilio y si atenderás público, venderás alimentos, usarás gas o harás modificaciones al local.",
-      "Consulta en la ventanilla o portal de tu ayuntamiento si el uso de suelo permite ese giro y qué licencia de funcionamiento corresponde.",
+      "En CDMX, revisa en SIAPEM si tu giro corresponde a bajo impacto y confirma la compatibilidad de uso de suelo para el domicilio.",
       "No firmes un contrato largo ni compres obra o equipo crítico antes de recibir esa orientación por escrito o mediante folio.",
       "Guarda el folio, correo o documento de la consulta junto con la ficha de requisitos municipales.",
     ],
     applicability: "base",
-    authority: "Ayuntamiento o alcaldía del domicilio del negocio",
-    evidence: ["Domicilio y giro definidos", "Folio, correo o respuesta municipal guardada", "Lista local de requisitos revisada"],
-    officialLinks: [{ label: "Buscador oficial de trámites", url: "https://www.gob.mx/tramites" }],
-    caution: "No existe una licencia municipal única para todo México. El costo, plazo y documentos dependen de tu municipio y actividad.",
+    authority: "SEDECO y alcaldía correspondiente · piloto Ciudad de México",
+    evidence: ["Domicilio y giro definidos", "Consulta SIAPEM o constancia de uso de suelo revisada", "Lista CDMX de requisitos guardada"],
+    officialLinks: [
+      { label: "SIAPEM · avisos y permisos CDMX", url: "https://siapem.cdmx.gob.mx/index.xhtml" },
+      { label: "Guía oficial SIAPEM · SEDECO CDMX", url: "https://www.sedeco.cdmx.gob.mx/tramites/sistema-electronico-de-avisos-y-permisos-de-establecimientos-mercantiles-siapem" },
+    ],
+    caution: "Esta guía detallada aplica al piloto CDMX. Para otra ciudad, Tlacuachic muestra la ruta federal y te pide validar con la autoridad local.",
     hasCost: true,
     estimatedCost: "Por confirmar con tu municipio",
     canDoOnline: false,
@@ -79,22 +82,26 @@ const roadmapSteps = [
   {
     id: "municipal-opening",
     level: 1,
-    title: "Gestiona apertura municipal",
-    description: "Integra licencias locales y confirma Protección Civil antes de abrir al público.",
+    title: "Presenta tu aviso de apertura CDMX",
+    description: "Piloto CDMX: integra el aviso SIAPEM y confirma las medidas de Protección Civil antes de abrir al público.",
     category: "legal",
     xp: 120,
-    summary: "Con la viabilidad del local validada, integra los trámites municipales que te indicaron. Protección Civil también se revisa con la autoridad local según el inmueble y actividad.",
+    summary: "En CDMX, los establecimientos de bajo impacto presentan su aviso mediante SIAPEM. Protección Civil depende del riesgo, aforo, superficie y tipo de inmueble.",
     instructions: [
-      "Reúne los documentos y planos que el municipio haya solicitado para licencia de funcionamiento o apertura.",
-      "Presenta la solicitud municipal y guarda el acuse o folio de seguimiento.",
-      "Consulta a Protección Civil municipal si tu local requiere programa, visto bueno, capacitación, señalización o inspección.",
+      "Reúne los documentos que indique SIAPEM para tu aviso o permiso de operación.",
+      "Presenta el aviso en SIAPEM y guarda el acuse firmado y visible en el establecimiento cuando corresponda.",
+      "Consulta las medidas preventivas y si por riesgo, aforo o superficie aplica Programa Interno de Protección Civil.",
       "No abras al público hasta cumplir lo que determine tu municipio para tu actividad y local.",
     ],
     applicability: "base",
-    authority: "Ayuntamiento o alcaldía y Protección Civil municipal",
-    evidence: ["Solicitud o licencia municipal resguardada", "Requisitos de Protección Civil confirmados", "Acuse, dictamen o evidencia que corresponda al local"],
-    officialLinks: [{ label: "Buscador oficial de trámites", url: "https://www.gob.mx/tramites" }],
-    caution: "Los requisitos de Protección Civil y apertura no son idénticos en todos los municipios; confirma la versión vigente con la autoridad local.",
+    authority: "SEDECO CDMX, alcaldía y SGIRPC CDMX",
+    evidence: ["Aviso o permiso SIAPEM resguardado", "Requisitos de Protección Civil CDMX confirmados", "Acuse, dictamen o evidencia que corresponda al local"],
+    officialLinks: [
+      { label: "SIAPEM · CDMX", url: "https://siapem.cdmx.gob.mx/index.xhtml" },
+      { label: "Trámites de Protección Civil CDMX", url: "https://www.proteccioncivil.cdmx.gob.mx/servicios/servicio/tramites-y-servicios" },
+      { label: "Medidas preventivas para bajo riesgo · CDMX", url: "https://educacion.proteccioncivil.cdmx.gob.mx/course/info.php?id=11" },
+    ],
+    caution: "No todos los locales requieren Programa Interno. En CDMX, depende de los criterios de riesgo y características del establecimiento; valida tu caso antes de abrir.",
     hasCost: true,
     estimatedCost: "Variable según municipio, inmueble y giro",
     canDoOnline: false,
@@ -226,30 +233,34 @@ const providers = [
 ];
 
 export async function seedIfEmpty() {
-  const { rows } = await pool.query("SELECT COUNT(*)::int AS count FROM tlacuachic_roadmap_steps");
-  if (rows[0].count > 0) return;
-
   await pool.query("BEGIN");
   try {
     for (let i = 0; i < roadmapSteps.length; i++) {
       const s = roadmapSteps[i];
       await pool.query(
         `INSERT INTO tlacuachic_roadmap_steps
-           (id, position, level, title, description, category, xp, summary, instructions, applicability, authority, evidence, official_links, caution, has_cost, estimated_cost, can_do_online, connect_to)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`,
+         (id, position, level, title, description, category, xp, summary, instructions, applicability, authority, evidence, official_links, caution, has_cost, estimated_cost, can_do_online, connect_to)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+         ON CONFLICT (id) DO UPDATE SET
+           position = EXCLUDED.position, level = EXCLUDED.level, title = EXCLUDED.title,
+           description = EXCLUDED.description, category = EXCLUDED.category, xp = EXCLUDED.xp,
+           summary = EXCLUDED.summary, instructions = EXCLUDED.instructions, applicability = EXCLUDED.applicability,
+           authority = EXCLUDED.authority, evidence = EXCLUDED.evidence, official_links = EXCLUDED.official_links,
+           caution = EXCLUDED.caution, has_cost = EXCLUDED.has_cost, estimated_cost = EXCLUDED.estimated_cost,
+           can_do_online = EXCLUDED.can_do_online, connect_to = EXCLUDED.connect_to`,
         [s.id, i, s.level, s.title, s.description, s.category, s.xp, s.summary, JSON.stringify(s.instructions), s.applicability, s.authority, JSON.stringify(s.evidence), JSON.stringify(s.officialLinks), s.caution ?? null, s.hasCost, s.estimatedCost ?? null, s.canDoOnline, JSON.stringify(s.connectTo)]
       );
     }
     for (const m of mentors) {
       await pool.query(
-        `INSERT INTO tlacuachic_mentors (id, name, expertise, businesses_opened, location, rating, avatar_color) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        `INSERT INTO tlacuachic_mentors (id, name, expertise, businesses_opened, location, rating, avatar_color) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (id) DO NOTHING`,
         [m.id, m.name, m.expertise, m.businessesOpened, m.location, m.rating, m.avatarColor]
       );
     }
     for (const p of providers) {
       await pool.query(
-        `INSERT INTO tlacuachic_providers (id, user_id, name, kind, is_ai, category, type, location, city, country, rating, description, helps_with)
-         VALUES ($1, NULL, $2,$3,$4,$5,$6,$7,$8,'Mexico',$9,$10,$11)`,
+        `INSERT INTO tlacuachic_providers (id, user_id, name, kind, is_ai, category, type, location, city, country, rating, description, helps_with, is_demo)
+         VALUES ($1, NULL, $2,$3,$4,$5,$6,$7,$8,'Mexico',$9,$10,$11,true) ON CONFLICT (id) DO UPDATE SET is_demo = true`,
         [p.id, p.name, p.kind, Boolean(p.isAI), p.category, p.type, p.location, p.city, p.rating, p.description, JSON.stringify(p.helpsWith)]
       );
     }

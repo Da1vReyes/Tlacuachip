@@ -1,0 +1,13 @@
+{
+  "name": "tlacuachic",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm --prefix web run build",
+    "seed:demo": "npm --prefix services/user-service run seed:demo",
+    "seed:test-network": "npm --prefix services/user-service run seed:test-network",
+    "import:denue": "node scripts/import-denue.mjs",
+    "test": "npm --prefix server test"
+  }
+}

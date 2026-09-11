@@ -1,4 +1,6 @@
 import { tagsForCategory } from "./categories.js";
+import { matchingDemoSnapshot } from "./demoSnapshot.js";
+import { denuePointsFor } from "./denue.js";
 
 const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
 const cache = new Map();
@@ -47,6 +49,11 @@ async function fetchOnce(query, timeoutMs) {
 }
 
 export async function fetchRealPoints(bbox, category) {
+  // A locally-imported official DENUE release is preferred in Mexico. It is
+  // deterministic for a demo and avoids exposing the experience to a public
+  // Overpass outage. Returning an empty array is a valid DENUE result.
+  const denue = denuePointsFor(bbox, category);
+  if (denue) return denue;
   const key = cacheKey(bbox[0], bbox[1], category);
   const cached = cache.get(key);
   if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
@@ -65,6 +72,8 @@ export async function fetchRealPoints(bbox, category) {
     try {
       json = await fetchOnce(query, 15000);
     } catch {
+      const snapshot = matchingDemoSnapshot(bbox, category);
+      if (snapshot) return snapshot;
       throw firstErr;
     }
   }
@@ -79,7 +88,7 @@ export async function fetchRealPoints(bbox, category) {
     })
     .filter(Boolean);
 
-  const data = { points, source: "osm" };
+  const data = { points, source: "osm", capturedAt: new Date().toISOString().slice(0, 10) };
   cache.set(key, { data, at: Date.now() });
   return data;
 }

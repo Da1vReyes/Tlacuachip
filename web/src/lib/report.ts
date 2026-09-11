@@ -1,12 +1,12 @@
 import type { BusinessFormData, ReportData } from "../types";
-import { API_BASE, postJson } from "./api";
-import { generateMockReport } from "../data/mockData";
+import { postJson } from "./api";
 
 interface ServerReport {
   source: "llm" | "fallback";
   model: string | null;
   localBusinessCount: number;
   osmAvailable: boolean;
+  marketSource?: string | null;
   sectorGrowthPercent: number;
   sectorGrowthPeriod: string;
   avgMonthlyRevenue: number;
@@ -16,20 +16,28 @@ interface ServerReport {
 }
 
 function withSources(base: Omit<ReportData, "sources">): ReportData {
+  const usesDenue = base.marketSource === "inegi_denue_snapshot";
+  const sourceKnown = usesDenue || base.marketSource === "openstreetmap";
   const sources = base.osmAvailable
     ? [
         {
-          name: "Negocios similares mapeados cerca de tu ciudad",
-          publisher: "OpenStreetMap contributors",
+          name: usesDenue ? "DENUE: establecimientos similares cerca de tu ciudad" : sourceKnown ? "Negocios similares mapeados cerca de tu ciudad" : "Directorio georreferenciado usado en la lectura anterior",
+          publisher: usesDenue ? "INEGI" : sourceKnown ? "OpenStreetMap contributors" : "Fuente a actualizar",
           year: new Date().getFullYear(),
-          url: "https://www.openstreetmap.org/copyright",
+          url: usesDenue ? "https://www.inegi.org.mx/app/mapa/denue/" : sourceKnown ? "https://www.openstreetmap.org/copyright" : "https://www.inegi.org.mx/app/mapa/denue/",
         },
       ]
     : [];
+  sources.push({
+    name: "Información de tu negocio",
+    publisher: "Formulario de Tlacuachic · solo datos que tú ingresaste",
+    year: new Date().getFullYear(),
+    url: "#metodologia",
+  });
   if (base.source === "llm") {
     sources.push({
-      name: "Lectura de mercado generada por IA a partir de tus datos",
-      publisher: "OpenRouter",
+      name: "Interpretación de los insumos anteriores",
+      publisher: "OpenRouter · no es una fuente de datos ni una búsqueda web",
       year: new Date().getFullYear(),
       url: "https://openrouter.ai",
     });
@@ -41,26 +49,21 @@ function withSources(base: Omit<ReportData, "sources">): ReportData {
  * Gets a market report for this business. Tries the real endpoint first
  * (real OSM competition count + AI reasoning, server/src/report.js); if the
  * server itself is unreachable (not just the AI or Overpass — the server
- * already handles those internally), falls back to the fully local mock
- * generator so the app never blocks on a network problem.
+ * already handles those internally), surfaces that error instead of
+ * fabricating a market report in the browser.
  */
 export async function generateReport(form: BusinessFormData): Promise<ReportData> {
-  try {
-    const server = await postJson<ServerReport>("/api/report", form);
-    return withSources({
-      sectorGrowthPercent: server.sectorGrowthPercent,
-      sectorGrowthPeriod: server.sectorGrowthPeriod,
-      localBusinessCount: server.localBusinessCount,
-      avgMonthlyRevenue: server.avgMonthlyRevenue,
-      survivalRate5Years: server.survivalRate5Years,
-      demandTrend: server.demandTrend,
-      insights: server.insights,
-      source: server.source,
-      osmAvailable: server.osmAvailable,
-    });
-  } catch (err) {
-    console.warn(`No se pudo contactar ${API_BASE} para el reporte, usando datos locales:`, err);
-    const mock = generateMockReport(form);
-    return { ...mock, source: "fallback", osmAvailable: false };
-  }
+  const server = await postJson<ServerReport>("/api/report", form);
+  return withSources({
+    sectorGrowthPercent: server.sectorGrowthPercent,
+    sectorGrowthPeriod: server.sectorGrowthPeriod,
+    localBusinessCount: server.localBusinessCount,
+    avgMonthlyRevenue: server.avgMonthlyRevenue,
+    survivalRate5Years: server.survivalRate5Years,
+    demandTrend: server.demandTrend,
+    insights: server.insights,
+    source: server.source,
+    osmAvailable: server.osmAvailable,
+    marketSource: server.marketSource,
+  });
 }

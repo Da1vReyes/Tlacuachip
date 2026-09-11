@@ -62,7 +62,7 @@ export default function Auth() {
         </div>
 
         <form className="stack" onSubmit={handleSubmit}>
-          <div className="role-grid" role="radiogroup" aria-label="Tipo de cuenta">
+          {mode === "signup" && <div className="role-grid" role="radiogroup" aria-label="Tipo de cuenta">
             <button type="button" className={`role-card${role === "entrepreneur" ? " selected" : ""}`} onClick={() => setRole("entrepreneur")} aria-pressed={role === "entrepreneur"}>
               <IconRoute size={18} />
               <strong>Quiero emprender</strong>
@@ -73,7 +73,7 @@ export default function Auth() {
               <strong>Ofrezco servicios</strong>
               <small>Abogado, contador, asesor, marketing, gestoría o insumos. Que me encuentren cuando me necesiten.</small>
             </button>
-          </div>
+          </div>}
 
           {mode === "signup" && (
             <div className="field">

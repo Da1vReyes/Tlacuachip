@@ -11,31 +11,17 @@ import {
 } from "recharts";
 import { MapContainer, TileLayer, CircleMarker } from "react-leaflet";
 import { useApp } from "../context/AppContext";
-import { generateMockHeatmap } from "../data/mockData";
 import { useCityCenter } from "../hooks/useCityCenter";
+import { useDensity } from "../hooks/useDensity";
 import { useCountUp } from "../hooks/useCountUp";
 import { IconTrendUp, IconRoute, IconChat, IconMap, IconUsers, IconHelp } from "../components/icons";
-import { communityMessages } from "../data/mockData";
 import { buildMinimizedProfile } from "../lib/privacy";
 import { providerKindLabel, rankProviders } from "../lib/matching";
 
 const ROW_OFFSET = [-0.011, 0, 0.011];
 const COL_OFFSET = [-0.014, 0, 0.014];
 
-function opportunityColor(value: number) {
-  if (value >= 60) return "#238c63";
-  if (value >= 45) return "#6fa98a";
-  if (value >= 30) return "#e0c76a";
-  return "#c8583a";
-}
-
-const budgetBreakdown = [
-  { label: "Equipamiento", pct: 32, color: "#3870e3" },
-  { label: "Inventario inicial", pct: 24, color: "#6699ec" },
-  { label: "Renta y depósito", pct: 18, color: "#7cbaf0" },
-  { label: "Marketing", pct: 10, color: "#a7d3f5" },
-  { label: "Colchón 3 meses", pct: 16, color: "#d3e8fb" },
-];
+function supplyColor(value: number) { return value >= 72 ? "#c8583a" : value >= 54 ? "#e09b4c" : value >= 36 ? "#e0c76a" : "#92ad94"; }
 
 function KpiValue({ value, prefix = "", suffix = "" }: { value: number; prefix?: string; suffix?: string }) {
   const animated = useCountUp(value);
@@ -52,8 +38,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { businessForm, report, steps, progress, preferences, savePreferences, catalogProviders: providers } = useApp();
   const { center } = useCityCenter(businessForm);
-
-  const heatmap = useMemo(() => (businessForm ? generateMockHeatmap(businessForm) : null), [businessForm]);
+  const { data: density } = useDensity(center, businessForm?.category ?? null);
 
   const revenueSeries = useMemo(() => {
     if (!report) return [];
@@ -77,11 +62,14 @@ export default function Dashboard() {
   }
 
   const completedCount = steps.filter((s) => s.status === "completed").length;
+  const nextStep = steps.find((s) => s.status === "available" || s.status === "in-progress");
+  const formalizationPct = steps.length ? Math.round((completedCount / steps.length) * 100) : 0;
+  const marketCount = density?.totalPoints ?? null;
   const teamPicks = rankProviders(buildMinimizedProfile(businessForm, preferences, steps), providers, steps).slice(0, 3);
-  const bestZone = heatmap ? [...heatmap.zones].sort((a, b) => b.opportunityScore - a.opportunityScore)[0] : null;
+  const lowestSupplyZone = density ? [...density.zones].sort((a, b) => a.supplyScore - b.supplyScore)[0] : null;
   const zonePositions =
-    center && heatmap
-      ? heatmap.zones.map((z) => ({ ...z, lat: center[0] + ROW_OFFSET[z.row], lng: center[1] + COL_OFFSET[z.col] }))
+    center && density
+      ? density.zones.map((z) => ({ ...z, lat: center[0] + ROW_OFFSET[z.row], lng: center[1] + COL_OFFSET[z.col] }))
       : [];
 
   return (
@@ -101,9 +89,27 @@ export default function Dashboard() {
 
       <div className="stack" style={{ gap: 4 }}>
         <span className="pill">{businessForm.location.city}, {businessForm.location.state}</span>
-        <h1>Tu negocio: {businessForm.businessType}</h1>
-        <p>Todo lo que sabemos sobre tu mercado, tu presupuesto y tu progreso, en un solo lugar.</p>
+        <h1>Centro de lanzamiento: {businessForm.businessType}</h1>
+        <p>Una lectura operable de tu mercado, formalización y red. Empieza por la acción que mueve tu negocio hoy.</p>
       </div>
+
+      <section className="launch-command-center" aria-label="Estado de lanzamiento">
+        <div className="launch-primary">
+          <span className="launch-eyebrow">Tu siguiente movimiento</span>
+          <h2>{nextStep?.title ?? "Tu ruta está al día"}</h2>
+          <p>{nextStep ? nextStep.description : "Has documentado todos los pasos disponibles en esta versión de la ruta."}</p>
+          <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
+            {nextStep && <button className="btn btn-primary" onClick={() => navigate(`/paso/${nextStep.id}`)}>Abrir siguiente paso</button>}
+            <button className="btn btn-secondary" onClick={() => navigate("/mapa-calor")}>Revisar mi zona</button>
+          </div>
+        </div>
+        <div className="launch-signal-grid">
+          <div className="launch-signal"><span>Oferta local</span><strong>{marketCount === null ? "…" : marketCount.toLocaleString()}</strong><small>{density?.source === "inegi_denue_snapshot" ? "establecimientos DENUE en el área" : "lugares similares encontrados"}</small></div>
+          <div className="launch-signal"><span>Ruta formal</span><strong>{formalizationPct}%</strong><small>{completedCount} de {steps.length} pasos documentados</small></div>
+          <div className="launch-signal"><span>Red disponible</span><strong>{providers.length}</strong><small>{providers.length === 1 ? "perfil real para contactar" : "perfiles reales para contactar"}</small></div>
+        </div>
+        <div className="launch-evidence"><span className="data-proof"><i />Evidencia activa</span><p><strong>Fuente de mercado:</strong> {density?.source === "inegi_denue_snapshot" ? "DENUE / INEGI, snapshot local de CDMX" : density ? "OpenStreetMap" : "cargando fuente"}. Lo que no está respaldado por fuente se marca como hipótesis, no como dato.</p></div>
+      </section>
 
       <div className="grid-4 stagger">
         <div className="card card-hover">
@@ -175,42 +181,21 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="card stack">
-          <h2>Cómo se reparte tu presupuesto</h2>
-          <div className="stack stagger" style={{ gap: 10, marginTop: 4 }}>
-            {budgetBreakdown.map((b) => (
-              <div key={b.label} className="stack" style={{ gap: 4 }}>
-                <div className="row" style={{ justifyContent: "space-between" }}>
-                  <span className="muted">{b.label}</span>
-                  <span style={{ fontWeight: 600, fontSize: 12.5 }}>{b.pct}%</span>
-                </div>
-                <div className="progress-track" style={{ background: "var(--secondaryBg)" }}>
-                  <div
-                    className="progress-fill"
-                    style={{ background: b.color, transform: `scaleX(${b.pct / 100})` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            Sobre un presupuesto de ${businessForm.budget.toLocaleString()} MXN
-          </div>
-        </div>
+        <div className="card stack"><h2>Tu presupuesto inicial</h2><p>No repartimos tu dinero con porcentajes inventados. Cuando tengas cotizaciones reales, aquí podrás compararlas contra tu presupuesto de ${businessForm.budget.toLocaleString()} MXN.</p><button className="btn btn-secondary" onClick={() => navigate("/equipo")}>Buscar apoyo financiero</button></div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20, alignItems: "start" }}>
         <button type="button" className="card card-clickable card-button" style={{ padding: 0, overflow: "hidden" }} onClick={() => navigate("/mapa-calor")}>
           <div style={{ height: 160 }}>
-            {center && heatmap ? (
+            {center && density ? (
               <MapContainer center={center} zoom={13} zoomControl={false} dragging={false} scrollWheelZoom={false} doubleClickZoom={false} attributionControl={false} style={{ height: "100%", width: "100%" }}>
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 {zonePositions.map((z) => (
                   <CircleMarker
                     key={z.id}
                     center={[z.lat, z.lng]}
-                    radius={z.name === "Tu zona" ? 16 : 12}
-                    pathOptions={{ color: "#fff", weight: 1.5, fillColor: opportunityColor(z.opportunityScore), fillOpacity: 0.8 }}
+                    radius={z.id === preferences.selectedZoneId ? 16 : 12}
+                    pathOptions={{ color: "#fff", weight: 1.5, fillColor: supplyColor(z.supplyScore), fillOpacity: 0.8 }}
                   />
                 ))}
               </MapContainer>
@@ -225,11 +210,7 @@ export default function Dashboard() {
               <IconMap size={15} />
               <h2>Mapa de calor</h2>
             </div>
-            {bestZone && (
-              <p>
-                Mejor oportunidad: <strong style={{ color: "var(--primaryText)" }}>{bestZone.name}</strong> ({bestZone.opportunityScore}/100)
-              </p>
-            )}
+            {lowestSupplyZone && <p>Menor concentración: <strong style={{ color: "var(--primaryText)" }}>{lowestSupplyZone.name}</strong> ({lowestSupplyZone.supplyScore}/100)</p>}
           </div>
         </button>
 
@@ -263,19 +244,7 @@ export default function Dashboard() {
               Ver todo
             </button>
           </div>
-          <div className="stack stagger" style={{ gap: 10, marginTop: 8 }}>
-            {communityMessages.slice(0, 2).map((m) => (
-              <div key={m.id} className="stack" style={{ gap: 2 }}>
-                <div className="row" style={{ justifyContent: "space-between" }}>
-                  <span style={{ fontWeight: 600, fontSize: 12.5 }}>{m.author}</span>
-                  <span className="muted">{m.timestamp}</span>
-                </div>
-                <span className="muted" style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {m.message}
-                </span>
-              </div>
-            ))}
-          </div>
+          <p className="muted" style={{ marginTop: 8 }}>Publica una duda o responde a alguien que ya recorrió un paso parecido. La conversación se guarda en tu cuenta, no es contenido de muestra.</p>
         </div>
       </div>
 
@@ -295,6 +264,7 @@ export default function Dashboard() {
                   <strong style={{ fontSize: 13 }}>{provider.name}</strong>
                   <span className="pill">{providerKindLabel[provider.kind]}</span>
                   {provider.isAI && <span className="pill pill-warn">IA</span>}
+                  {provider.isDemo && <span className="pill">Demo</span>}
                 </div>
                 <span className="muted" style={{ fontSize: 12.5 }}>{reason}</span>
               </div>

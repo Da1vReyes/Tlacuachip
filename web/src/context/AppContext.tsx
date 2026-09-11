@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { BusinessFormData, DataPreferences, ProviderProfile, ReportData, User, UserProgress, UserRole } from "../types";
-import { roadmapSteps as initialSteps, mentors as fallbackMentors, providers as fallbackProviders } from "../data/mockData";
+import type { CommunityPost, Conversation, Workspace } from "../lib/userApi";
 import type { Mentor, Provider, RoadmapStep } from "../types";
 import { fetchRoadmapSteps, fetchMentors, fetchProviders } from "../lib/catalogApi";
 import {
@@ -19,7 +19,19 @@ import {
   saveProviderProfileRemote,
   toggleTeamProviderRemote,
   updateRoleRemote,
+  updateUserProfileRemote,
   deleteAccountRemote,
+  createCommunityPostRemote,
+  startConversationRemote,
+  fetchConversations,
+  sendConversationMessageRemote,
+  acceptConversationRemote,
+  inviteConversationToTeamRemote,
+  acceptTeamInviteRemote,
+  fetchWorkspace,
+  createWorkspaceItemRemote,
+  completeWorkspaceItemRemote,
+  uploadWorkspaceCsvRemote,
 } from "../lib/userApi";
 
 export interface AuthResult {
@@ -49,6 +61,7 @@ interface AppState {
   login: (email: string, password: string) => Promise<AuthResult>;
   logout: () => void;
   setRole: (role: UserRole) => void;
+  updateAccountProfile: (patch: { name?: string | null; avatarUrl?: string | null }) => Promise<void>;
   saveBusinessForm: (form: BusinessFormData) => void;
   saveReport: (report: ReportData) => void;
   saveProviderProfile: (profile: ProviderProfile) => void;
@@ -56,6 +69,17 @@ interface AppState {
   completeStep: (stepId: string) => void;
   savePreferences: (preferences: Partial<DataPreferences>) => void;
   deleteAllData: () => void;
+  publishCommunityPost: (body: string, parentId?: string) => Promise<CommunityPost>;
+  contactProvider: (providerId: string, body: string) => Promise<void>;
+  getConversations: () => Promise<Conversation[]>;
+  sendConversationMessage: (conversationId: string, body: string) => Promise<void>;
+  acceptConversation: (conversationId: string) => Promise<void>;
+  inviteToTeam: (conversationId: string) => Promise<void>;
+  acceptTeamInvite: (conversationId: string) => Promise<void>;
+  getWorkspace: () => Promise<Workspace[]>;
+  createWorkspaceItem: (conversationId: string, input: { title: string; description?: string; dueDate?: string }) => Promise<void>;
+  completeWorkspaceItem: (itemId: string, completed: boolean) => Promise<void>;
+  uploadWorkspaceCsv: (conversationId: string, input: { name: string; contentBase64: string }) => Promise<void>;
 }
 
 const STORAGE_KEY = "emprende-mvp-state";
@@ -71,18 +95,8 @@ const defaultProgress: UserProgress = {
 const AppContext = createContext<AppState | undefined>(undefined);
 
 function unlockNextSteps(steps: RoadmapStep[], completedSteps: string[]): RoadmapStep[] {
-  const result = steps.map((s) => ({ ...s }));
-  result.forEach((step, idx) => {
-    if (completedSteps.includes(step.id)) {
-      step.status = "completed";
-    } else if (idx === 0) {
-      step.status = step.status === "locked" ? "available" : step.status;
-    } else {
-      const prev = result[idx - 1];
-      step.status = prev.status === "completed" ? (step.status === "locked" ? "available" : step.status) : step.status;
-    }
-  });
-  return result;
+  const prerequisites: Record<string, string[]> = { "sat-rfc": ["local-viability"], "fiscal-setup": ["sat-rfc"], "municipal-opening": ["fiscal-setup"], "sector-permits": ["municipal-opening"], "employment-imss": ["municipal-opening"], "operational-ready": ["municipal-opening"], "brand-and-growth": ["operational-ready"] };
+  return steps.map((step) => ({ ...step, status: completedSteps.includes(step.id) ? "completed" : (prerequisites[step.id] ?? []).every((id) => completedSteps.includes(id)) ? "available" : "locked" }));
 }
 
 interface Persisted {
@@ -146,9 +160,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [team, setTeam] = useState<string[]>(persisted.team);
   const [authReady, setAuthReady] = useState(!token);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [catalogSteps, setCatalogSteps] = useState<Omit<RoadmapStep, "status">[]>(initialSteps);
-  const [mentors, setMentors] = useState<Mentor[]>(fallbackMentors);
-  const [catalogProviders, setCatalogProviders] = useState<Provider[]>(fallbackProviders);
+  const [catalogSteps, setCatalogSteps] = useState<Omit<RoadmapStep, "status">[]>([]);
+  const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [catalogProviders, setCatalogProviders] = useState<Provider[]>([]);
   const skipNextPersist = useRef(false);
   const tokenRef = useRef(token);
   tokenRef.current = token;
@@ -204,10 +218,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch the real catalog once on mount; keep the static mockData content
-  // as the initial state and fallback, matching the app's established
-  // graceful-degradation pattern (if catalog-service is down, the app
-  // still works with the bundled demo data).
+  // Catalog content lives in Postgres and is always read through the API.
+  // We deliberately do not bundle a second, stale roster in the browser.
   useEffect(() => {
     let cancelled = false;
     fetchRoadmapSteps()
@@ -310,6 +322,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     sync("role", (t) => updateRoleRemote(t, role));
   };
 
+  const updateAccountProfile: AppState["updateAccountProfile"] = async (patch) => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para actualizar tu perfil.");
+    const saved = await updateUserProfileRemote(t, patch);
+    setUser(toClientUser(saved));
+  };
+
   const saveBusinessFormAction = (form: BusinessFormData) => {
     setBusinessForm(form);
     sync("business-profile", (t) => saveBusinessProfile(t, form));
@@ -341,12 +360,77 @@ export function AppProvider({ children }: { children: ReactNode }) {
     logout();
   };
 
+  const publishCommunityPost: AppState["publishCommunityPost"] = async (body, parentId) => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para publicar.");
+    return createCommunityPostRemote(t, body, parentId);
+  };
+
+  const contactProvider: AppState["contactProvider"] = async (providerId, body) => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para contactar a un profesional.");
+    await startConversationRemote(t, providerId, body);
+  };
+
+  const getConversations: AppState["getConversations"] = async () => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para ver tus mensajes.");
+    return fetchConversations(t);
+  };
+
+  const sendConversationMessage: AppState["sendConversationMessage"] = async (conversationId, body) => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para enviar un mensaje.");
+    await sendConversationMessageRemote(t, conversationId, body);
+  };
+
+  const acceptConversation: AppState["acceptConversation"] = async (conversationId) => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para responder una solicitud.");
+    await acceptConversationRemote(t, conversationId);
+  };
+
+  const inviteToTeam: AppState["inviteToTeam"] = async (conversationId) => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para invitar a tu equipo.");
+    await inviteConversationToTeamRemote(t, conversationId);
+  };
+
+  const acceptTeamInvite: AppState["acceptTeamInvite"] = async (conversationId) => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para aceptar una colaboración.");
+    await acceptTeamInviteRemote(t, conversationId);
+  };
+
+  const getWorkspace: AppState["getWorkspace"] = async () => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para ver tu espacio de trabajo.");
+    return fetchWorkspace(t);
+  };
+
+  const createWorkspaceItem: AppState["createWorkspaceItem"] = async (conversationId, input) => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para crear una tarea.");
+    await createWorkspaceItemRemote(t, conversationId, input);
+  };
+
+  const completeWorkspaceItem: AppState["completeWorkspaceItem"] = async (itemId, completed) => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para actualizar una tarea.");
+    await completeWorkspaceItemRemote(t, itemId, completed);
+  };
+
+  const uploadWorkspaceCsv: AppState["uploadWorkspaceCsv"] = async (conversationId, input) => {
+    const t = tokenRef.current;
+    if (!t) throw new Error("Inicia sesión para subir un archivo.");
+    await uploadWorkspaceCsvRemote(t, conversationId, input);
+  };
+
   const completeStep = (stepId: string) => {
-    let awardedXp = 0;
+    const step = catalogSteps.find((item) => item.id === stepId);
+    const awardedXp = step?.xp ?? 0;
     setProgress((prev) => {
       if (prev.completedSteps.includes(stepId)) return prev;
-      const step = catalogSteps.find((s) => s.id === stepId);
-      awardedXp = step?.xp ?? 0;
       const newXp = prev.xp + awardedXp;
       const newLevel = Math.floor(newXp / 400) + 1;
       return {
@@ -378,6 +462,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         setRole,
+        updateAccountProfile,
         saveBusinessForm: saveBusinessFormAction,
         saveReport: saveReportAction,
         saveProviderProfile: saveProviderProfileAction,
@@ -385,6 +470,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
         completeStep,
         savePreferences,
         deleteAllData,
+        publishCommunityPost,
+        contactProvider,
+        getConversations,
+        sendConversationMessage,
+        acceptConversation,
+        inviteToTeam,
+        acceptTeamInvite,
+        getWorkspace,
+        createWorkspaceItem,
+        completeWorkspaceItem,
+        uploadWorkspaceCsv,
       }}
     >
       {children}

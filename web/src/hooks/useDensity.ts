@@ -4,8 +4,13 @@ import { API_BASE } from "../lib/api";
 
 export interface DensityZone {
   id: string;
+  name: string;
+  row: number;
+  col: number;
   businessCount: number;
   supplyScore: number;
+  demandEstimate: number;
+  costEstimate: number;
 }
 
 export interface DensityPoint {
@@ -17,9 +22,11 @@ export interface DensityPoint {
 
 interface DensityResponse {
   source: string;
+  capturedAt?: string;
   totalPoints: number;
   points: DensityPoint[];
   zones: DensityZone[];
+  estimates?: { synthetic: boolean; method: string };
 }
 
 export function useDensity(center: [number, number] | null, category: BusinessCategory | null) {

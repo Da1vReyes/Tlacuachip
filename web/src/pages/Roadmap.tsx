@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
-import type { ComponentType } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState, type ComponentType } from "react";
 import { useApp } from "../context/AppContext";
 import { IconCheck, IconLock, IconForm, IconUsers, IconChart, IconChat, IconBag, IconRoute } from "../components/icons";
 
@@ -31,7 +31,16 @@ const timelineHeight = centerY + laneHeight + nodeSize / 2;
 
 export default function Roadmap() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { steps, progress, businessForm } = useApp();
+  const completedStepId = (location.state as { completedStepId?: string } | null)?.completedStepId;
+  const [celebrating, setCelebrating] = useState(Boolean(completedStepId));
+
+  useEffect(() => {
+    if (!completedStepId) return;
+    const timer = window.setTimeout(() => setCelebrating(false), 1450);
+    return () => window.clearTimeout(timer);
+  }, [completedStepId]);
 
   const isMexico = businessForm?.location.country === "Mexico";
   const baseSteps = steps.filter((step) => step.detail.applicability === "base");
@@ -101,6 +110,7 @@ export default function Roadmap() {
               const doneX = startX + lastDone * nodeGap;
               return (
                 <line
+                  className={celebrating ? "roadmap-progress-draw" : undefined}
                   x1={startX}
                   y1={centerY}
                   x2={doneX}
@@ -118,6 +128,7 @@ export default function Roadmap() {
             const locked = step.status === "locked";
             const completed = step.status === "completed";
             const available = step.status === "available" || step.status === "in-progress";
+            const isNewlyUnlocked = celebrating && i > 0 && steps[i - 1]?.id === completedStepId && available;
             const CatIcon = categoryIcon[step.category];
             const isAbove = i % 2 === 0;
             const connectMentor = step.detail.connectTo?.includes("mentores");
@@ -141,7 +152,7 @@ export default function Roadmap() {
                   onClick={() => !locked && navigate(`/paso/${step.id}`)}
                   disabled={locked}
                   aria-label={step.title}
-                  className={available ? "pulse-ring" : undefined}
+                  className={`${available ? "pulse-ring" : ""}${isNewlyUnlocked ? " roadmap-newly-unlocked" : ""}`}
                   style={{
                     width: nodeSize,
                     height: nodeSize,
@@ -245,6 +256,7 @@ export default function Roadmap() {
           Ver comunidad
         </button>
       </div>
+      {celebrating && <p className="roadmap-completion-note" role="status">Evidencia registrada. Tu siguiente paso ya está disponible.</p>}
     </div>
   );
 }

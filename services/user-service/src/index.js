@@ -7,6 +7,7 @@ import {
   findUserByEmail,
   getUserPublic,
   updateUserRole,
+  updateUserProfile,
   getBusinessProfile,
   upsertBusinessProfile,
   getReport,
@@ -21,6 +22,18 @@ import {
   toggleTeamProvider,
   getFullProfile,
   deleteUser,
+  listCommunityPosts,
+  createCommunityPost,
+  startConversation,
+  listConversations,
+  addConversationMessage,
+  acceptConversation,
+  inviteConversationToTeam,
+  acceptTeamInvite,
+  listWorkspace,
+  createWorkspaceItem,
+  completeWorkspaceItem,
+  uploadWorkspaceFile,
 } from "./repository.js";
 import {
   ValidationError,
@@ -30,9 +43,10 @@ import {
   validatePreferences,
   validateProviderProfile,
   validateReportBlob,
+  validateUserProfile,
 } from "./validate.js";
 import { rateLimit } from "./ratelimit.js";
-import { syncProviderToCatalog, removeProviderFromCatalog } from "./catalogSync.js";
+import { syncProviderToCatalog, removeProviderFromCatalog, getProviderOwnerFromCatalog } from "./catalogSync.js";
 
 await migrate();
 
@@ -44,11 +58,26 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173,ht
   .filter(Boolean);
 
 app.use(cors({ origin: (origin, cb) => cb(null, !origin || allowedOrigins.includes(origin)) }));
-app.use(express.json({ limit: "128kb" }));
+// A collaboration can include one small CSV. The per-file validation below
+// remains the real cap; this only lets its base64 transport reach the route.
+app.use(express.json({ limit: "512kb" }));
 app.disable("x-powered-by");
 
 const PORT = process.env.PORT || 4100;
 const authLimiter = rateLimit(20); // signup/login: 20/min/IP, brute-force friction
+
+// The base legal path is deliberately enforced server-side as well as in the
+// timeline UI. Conditional checks remain available after municipal opening;
+// they are not silently treated as universal permits.
+const STEP_PREREQUISITES = {
+  "sat-rfc": ["local-viability"],
+  "fiscal-setup": ["sat-rfc"],
+  "municipal-opening": ["fiscal-setup"],
+  "sector-permits": ["municipal-opening"],
+  "employment-imss": ["municipal-opening"],
+  "operational-ready": ["municipal-opening"],
+  "brand-and-growth": ["operational-ready"],
+};
 
 app.get("/", (_req, res) => {
   res.json({
@@ -60,6 +89,7 @@ app.get("/", (_req, res) => {
       "POST /api/auth/login",
       "GET /api/me",
       "PUT /api/me/role",
+      "PATCH /api/me/profile",
       "PUT /api/me/business-profile",
       "GET /api/me/report",
       "PUT /api/me/report",
@@ -75,6 +105,10 @@ app.get("/", (_req, res) => {
 });
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
+
+app.get("/api/community/posts", async (_req, res, next) => {
+  try { res.json(await listCommunityPosts()); } catch (err) { next(err); }
+});
 
 function handleValidation(err, res) {
   if (err instanceof ValidationError) {
@@ -148,11 +182,101 @@ app.get("/api/me", async (req, res, next) => {
   }
 });
 
+app.post("/api/me/community/posts", async (req, res, next) => {
+  try {
+    const body = typeof req.body?.body === "string" ? req.body.body : "";
+    const parentId = typeof req.body?.parentId === "string" ? req.body.parentId : null;
+    res.status(201).json(await createCommunityPost(req.userId, body, parentId));
+  } catch (err) {
+    if (String(err.message).startsWith("invalid_") || err.message === "parent_post_not_found") return res.status(400).json({ error: "invalid_request", message: "La publicación no es válida." });
+    next(err);
+  }
+});
+
+app.post("/api/me/conversations", async (req, res, next) => {
+  try {
+    const providerId = typeof req.body?.providerId === "string" ? req.body.providerId.slice(0, 80) : "";
+    const body = typeof req.body?.body === "string" ? req.body.body : "";
+    const owner = await getProviderOwnerFromCatalog(providerId);
+    if (!owner) return res.status(404).json({ error: "provider_not_contactable", message: "Este perfil no acepta mensajes todavía." });
+    if (owner.userId === req.userId) return res.status(400).json({ error: "invalid_request", message: "No puedes enviarte un mensaje a ti mismo." });
+    res.status(201).json(await startConversation(req.userId, owner.userId, providerId, body));
+  } catch (err) {
+    if (err.message === "invalid_message") return res.status(400).json({ error: "invalid_request", message: "Escribe un mensaje de hasta 1,200 caracteres." });
+    next(err);
+  }
+});
+
+app.get("/api/me/conversations", async (req, res, next) => {
+  try { res.json(await listConversations(req.userId)); } catch (err) { next(err); }
+});
+
+app.post("/api/me/conversations/:conversationId/messages", async (req, res, next) => {
+  try {
+    const body = typeof req.body?.body === "string" ? req.body.body : "";
+    res.status(201).json(await addConversationMessage(req.userId, String(req.params.conversationId), body));
+  } catch (err) {
+    if (err.message === "invalid_message") return res.status(400).json({ error: "invalid_request", message: "Escribe un mensaje de hasta 1,200 caracteres." });
+    if (err.message === "conversation_not_found") return res.status(404).json({ error: "conversation_not_found" });
+    next(err);
+  }
+});
+
+app.post("/api/me/conversations/:conversationId/accept", async (req, res, next) => {
+  try { res.json(await acceptConversation(req.userId, String(req.params.conversationId))); }
+  catch (err) {
+    if (err.message === "conversation_not_pending") return res.status(409).json({ error: "conversation_not_pending" });
+    next(err);
+  }
+});
+
+app.post("/api/me/conversations/:conversationId/team-invite", async (req, res, next) => {
+  try { res.json(await inviteConversationToTeam(req.userId, String(req.params.conversationId))); }
+  catch (err) { if (err.message === "team_invite_not_available") return res.status(409).json({ error: "team_invite_not_available" }); next(err); }
+});
+
+app.post("/api/me/conversations/:conversationId/team-accept", async (req, res, next) => {
+  try { res.json(await acceptTeamInvite(req.userId, String(req.params.conversationId))); }
+  catch (err) { if (err.message === "team_invite_not_available") return res.status(409).json({ error: "team_invite_not_available" }); next(err); }
+});
+
+app.get("/api/me/workspace", async (req, res, next) => {
+  try { res.json(await listWorkspace(req.userId)); } catch (err) { next(err); }
+});
+
+app.post("/api/me/workspace/:conversationId/items", async (req, res, next) => {
+  try { res.status(201).json(await createWorkspaceItem(req.userId, String(req.params.conversationId), req.body)); }
+  catch (err) { if (err.message === "invalid_workspace_item") return res.status(400).json({ error: "invalid_workspace_item" }); if (err.message === "workspace_not_available") return res.status(403).json({ error: "workspace_not_available" }); next(err); }
+});
+
+app.patch("/api/me/workspace/items/:itemId", async (req, res, next) => {
+  try { res.json(await completeWorkspaceItem(req.userId, String(req.params.itemId), req.body?.completed)); }
+  catch (err) { if (err.message === "workspace_not_available") return res.status(403).json({ error: "workspace_not_available" }); next(err); }
+});
+
+app.post("/api/me/workspace/:conversationId/files", async (req, res, next) => {
+  try { res.status(201).json(await uploadWorkspaceFile(req.userId, String(req.params.conversationId), req.body)); }
+  catch (err) {
+    if (err.message === "invalid_workspace_file") return res.status(400).json({ error: "invalid_workspace_file", message: "Solo se permiten archivos CSV de hasta 250 KB." });
+    if (err.message === "workspace_not_available") return res.status(403).json({ error: "workspace_not_available" });
+    next(err);
+  }
+});
+
 app.put("/api/me/role", async (req, res, next) => {
   try {
     const role = req.body?.role;
     if (role !== "entrepreneur" && role !== "provider") throw new ValidationError("role is invalid");
     res.json(await updateUserRole(req.userId, role));
+  } catch (err) {
+    if (handleValidation(err, res)) return;
+    next(err);
+  }
+});
+
+app.patch("/api/me/profile", async (req, res, next) => {
+  try {
+    res.json(await updateUserProfile(req.userId, validateUserProfile(req.body)));
   } catch (err) {
     if (handleValidation(err, res)) return;
     next(err);
@@ -211,8 +335,14 @@ app.post("/api/me/progress/complete-step", async (req, res, next) => {
   try {
     const stepId = req.body?.stepId;
     if (typeof stepId !== "string" || !stepId.trim()) throw new ValidationError("stepId is required");
+    const normalizedId = stepId.trim().slice(0, 60);
+    const prerequisites = STEP_PREREQUISITES[normalizedId] ?? [];
+    const current = await getProgress(req.userId);
+    if (prerequisites.some((id) => !current.completedSteps.includes(id))) {
+      return res.status(409).json({ error: "step_locked", message: "Completa primero los pasos base anteriores." });
+    }
     const xp = Number(req.body?.xp);
-    res.json(await completeStep(req.userId, stepId.trim().slice(0, 60), Number.isFinite(xp) ? Math.max(0, Math.min(xp, 1000)) : 0));
+    res.json(await completeStep(req.userId, normalizedId, Number.isFinite(xp) ? Math.max(0, Math.min(xp, 1000)) : 0));
   } catch (err) {
     if (handleValidation(err, res)) return;
     next(err);

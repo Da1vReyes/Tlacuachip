@@ -1,16 +1,34 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import type { ProfileVisibility } from "../types";
 
 const visibility: { value: ProfileVisibility; title: string; text: string }[] = [
-  { value: "private", title: "Privado", text: "No apareces en búsquedas de mentores, proveedores o comunidad." },
-  { value: "business", title: "Datos clave del negocio", text: "Compartes giro, ciudad y etapa; nunca tu correo ni presupuesto exacto." },
-  { value: "profile", title: "Perfil completo", text: "Mentores y proveedores pueden conocer tu perfil para ofrecer ayuda relevante." },
+  { value: "private", title: "Privado", text: "En comunidad apareces de forma anónima. La red no recibe automáticamente tu información de negocio." },
+  { value: "business", title: "Datos clave del negocio", text: "La IA solo usa giro, ciudad y etapa para priorizar ayuda; correo, dirección y presupuesto exacto siguen privados." },
+  { value: "profile", title: "Perfil ampliado", text: "La IA puede usar descripción, experiencia y rango de presupuesto para sugerirte ayuda. Solo compartes con un proveedor lo que escribes en un mensaje." },
 ];
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { preferences, savePreferences, deleteAllData } = useApp();
+  const { preferences, savePreferences, deleteAllData, user, logout, updateAccountProfile } = useApp();
+  const [name, setName] = useState(user?.name ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "");
+  const [accountStatus, setAccountStatus] = useState<string | null>(null);
+
+  const saveAccount = async () => {
+    try {
+      await updateAccountProfile({ name: name.trim() || null, avatarUrl: avatarUrl || null });
+      setAccountStatus("Perfil actualizado.");
+    } catch (err) { setAccountStatus(err instanceof Error ? err.message : "No se pudo actualizar el perfil."); }
+  };
+  const choosePhoto = (file: File | undefined) => {
+    if (!file) return;
+    if (!/^image\/(png|jpe?g|webp)$/i.test(file.type) || file.size > 80000) { setAccountStatus("Elige una imagen PNG, JPG o WebP de máximo 80 KB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => setAvatarUrl(typeof reader.result === "string" ? reader.result : "");
+    reader.readAsDataURL(file);
+  };
   const removeEverything = () => {
     if (window.confirm("¿Eliminar tu cuenta y todos tus datos (perfil, negocio, progreso, preferencias) de nuestros servidores? Esta acción no se puede deshacer.")) {
       deleteAllData();
@@ -21,6 +39,18 @@ export default function Settings() {
   return (
     <div className="settings-page">
       <div className="settings-heading"><h1>Datos y privacidad</h1><p>Tu perfil te pertenece. Decide qué compartes y elimina lo que ya no quieres conservar.</p></div>
+      <section className="settings-section">
+        <h2>Tu cuenta</h2>
+        <p>Tu foto y nombre se guardan en tu cuenta; no se adjuntan a mensajes ni a solicitudes de ayuda automáticamente.</p>
+        <div className="row" style={{ alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+          <div className="topbar-avatar" style={{ width: 48, height: 48 }}>{avatarUrl ? <img src={avatarUrl} alt="Vista previa" /> : (name || user?.email || "A").charAt(0).toUpperCase()}</div>
+          <label className="btn btn-secondary" style={{ cursor: "pointer" }}>Subir foto<input type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(event) => choosePhoto(event.target.files?.[0])} /></label>
+          {avatarUrl && <button className="btn btn-ghost" onClick={() => setAvatarUrl("")}>Quitar foto</button>}
+        </div>
+        <div className="row" style={{ gap: 10, marginTop: 12, flexWrap: "wrap" }}><input aria-label="Tu nombre" value={name} maxLength={120} onChange={(event) => setName(event.target.value)} placeholder="Tu nombre" /><button className="btn btn-primary" onClick={saveAccount}>Guardar perfil</button></div>
+        {accountStatus && <small className="muted" role="status">{accountStatus}</small>}
+        <div style={{ marginTop: 14 }}><button className="btn btn-secondary" onClick={() => { logout(); navigate("/", { replace: true }); }}>Cerrar sesión</button></div>
+      </section>
       <section className="settings-section">
         <h2>Visibilidad para mentores y proveedores</h2>
         <p>Esto controla lo que otras personas pueden ver cuando buscan negocios a quienes ayudar.</p>

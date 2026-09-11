@@ -44,6 +44,19 @@ export function validateLogin(input) {
   return { email, password };
 }
 
+export function validateUserProfile(input) {
+  const patch = {};
+  if (input?.name !== undefined) patch.name = str(input.name, 120, "name") ?? null;
+  if (input?.avatarUrl !== undefined) {
+    const avatarUrl = input.avatarUrl;
+    if (avatarUrl !== null && (typeof avatarUrl !== "string" || avatarUrl.length > 110000 || !/^data:image\/(png|jpe?g|webp);base64,/i.test(avatarUrl))) {
+      throw new ValidationError("avatarUrl must be a small PNG, JPEG or WebP image");
+    }
+    patch.avatarUrl = avatarUrl;
+  }
+  return patch;
+}
+
 export function validateBusinessProfile(input) {
   const businessType = str(input?.businessType, 120, "businessType", { required: true });
   const category = str(input?.category, 40, "category", { required: true });

@@ -18,6 +18,7 @@ import Community from "./pages/Community";
 import MapOnboarding from "./pages/MapOnboarding";
 import Settings from "./pages/Settings";
 import Tutorial from "./pages/Tutorial";
+import Inbox from "./pages/Inbox";
 
 export default function App() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/comunidad" element={<Community />} />
             <Route path="/configuracion" element={<Settings />} />
             <Route path="/tutorial" element={<Tutorial />} />
+            <Route path="/mensajes" element={<Inbox />} />
           </Routes>
         </AppShell>
       </HashRouter>

@@ -36,3 +36,13 @@ export async function removeProviderFromCatalog(userId) {
     console.warn("[user-service] catalog removal failed:", err.message);
   }
 }
+
+export async function getProviderOwnerFromCatalog(providerId) {
+  if (!INTERNAL_API_KEY) throw new Error("catalog_sync_not_configured");
+  const res = await fetch(`${CATALOG_SERVICE_URL}/api/internal/providers/${encodeURIComponent(providerId)}/owner`, {
+    headers: { "x-internal-key": INTERNAL_API_KEY },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`catalog_lookup_failed:${res.status}`);
+  return res.json();
+}

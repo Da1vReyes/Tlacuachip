@@ -4,7 +4,7 @@ import { IconLeaf, IconRoute, IconChart, IconUsers, IconMap, IconCheck } from ".
 
 const programSteps = [
   { icon: IconChart, title: "Cuéntanos tu punto de partida", body: "El giro, presupuesto, ciudad y experiencia nos ayudan a preparar una lectura que sí corresponde a tu contexto." },
-  { icon: IconMap, title: "Compara tu zona con tres señales", body: "Lee oferta, demanda estimada y costo operativo. Puedes explorar zonas o validar un local que ya tienes." },
+  { icon: IconMap, title: "Comprueba quién ya opera cerca", body: "Lee negocios similares mapeados y visita las zonas que quieras validar. Las otras capas se publican solo cuando tienen fuente verificable." },
   { icon: IconRoute, title: "Construye el siguiente paso", body: "Obtén un camino de apertura, recursos oficiales y conexiones con mentores o proveedores cuando te hagan falta." },
 ];
 
@@ -26,23 +26,23 @@ export default function Landing() {
       <main>
         <section className="landing-hero">
           <div className="landing-hero-copy landing-enter">
-            <h1>No tienes que saberlo todo para empezar bien.</h1>
-            <p className="landing-lede">Una idea y ganas de emprender deberían ser suficientes para dar el primer paso. Tlacuachic te ayuda a descubrir qué necesitas revisar antes de invertir tu dinero.</p>
+            <h1>Empezar un negocio no debería exigir conocer a un abogado, contador y funcionario desde el día uno.</h1>
+            <p className="landing-lede">Tlacuachic pone tres cosas al alcance de quien emprende por primera vez: evidencia para evaluar una zona, una ruta para formalizarse y las personas correctas para cada siguiente paso.</p>
             <div className="landing-actions"><button className="btn btn-primary landing-cta" onClick={start}>Quiero emprender</button><button className="btn btn-secondary landing-cta" onClick={() => navigate("/auth?role=provider")}>Ofrezco servicios</button><span>Sin costo en este prototipo · toma cerca de 4 minutos</span></div>
           </div>
           <aside className="landing-preview landing-enter" aria-label="Vista previa del análisis">
-            <div className="landing-preview-head"><span>Una decisión, tres lecturas</span><span>Tu ciudad</span></div>
+            <div className="landing-preview-head"><span>Una decisión, evidencia primero</span><span>Tu ciudad</span></div>
             <div className="landing-preview-reading"><span className="preview-index">01</span><div><strong>Oferta</strong><small>Negocios similares mapeados</small></div><b>Dato real</b></div>
-            <div className="landing-preview-reading"><span className="preview-index">02</span><div><strong>Demanda</strong><small>Oportunidad de consumo estimada</small></div><b>Estimación</b></div>
-            <div className="landing-preview-reading"><span className="preview-index">03</span><div><strong>Costos</strong><small>Presión operativa relativa</small></div><b>Estimación</b></div>
-            <p>El análisis no decide por ti. Te da las preguntas y señales para decidir mejor.</p>
+            <div className="landing-preview-reading"><span className="preview-index">02</span><div><strong>Ruta formal</strong><small>Fuentes oficiales y evidencia por paso</small></div><b>México</b></div>
+            <div className="landing-preview-reading"><span className="preview-index">03</span><div><strong>Red humana</strong><small>Contacta a quien pueda resolver el siguiente paso</small></div><b>Tu control</b></div>
+            <p>No decidimos por ti ni prometemos éxito. Hacemos que información, cumplimiento y oportunidad sean más accesibles.</p>
           </aside>
         </section>
 
         <section className="landing-section landing-problem">
           <div className="landing-problem-title"><h2>El problema no es falta de ganas. Es falta de contexto.</h2></div>
           <div className="landing-problem-copy">
-            <p>Muchos negocios arrancan sin conocer la competencia cercana, el costo real de operar o los trámites que deben resolver. Cuando ese descubrimiento llega tarde, se vuelve caro.</p>
+            <p>Muchos negocios arrancan sin conocer la competencia cercana, los trámites que les aplican o a quién acudir cuando surge una duda. Cuando ese descubrimiento llega tarde, se vuelve caro.</p>
             <p>Tlacuachic convierte esas dudas en una ruta concreta: qué validar primero, dónde encontrar información oficial y a quién pedir ayuda cuando una decisión necesita experiencia.</p>
           </div>
         </section>
@@ -56,7 +56,7 @@ export default function Landing() {
           <div className="landing-data-statement"><h2>Datos claros. Decisiones tuyas.</h2><p>Distinguimos qué viene de una fuente abierta, qué es una estimación del prototipo y qué depende de tu propio negocio.</p></div>
           <div className="landing-data-list">
             <div><IconCheck size={17} /><p><strong>Oferta:</strong> conteos de negocios similares consultados en OpenStreetMap.</p></div>
-            <div><IconCheck size={17} /><p><strong>Demanda y costos:</strong> estimaciones señaladas como tales, no consejos financieros.</p></div>
+            <div><IconCheck size={17} /><p><strong>Capas futuras:</strong> demanda y costos solo se publicarán por zona cuando tengan fuente pública verificable.</p></div>
             <div><IconCheck size={17} /><p><strong>Tu perfil:</strong> eliges si compartes datos clave, tu perfil completo o nada con la red.</p></div>
             <div><IconCheck size={17} /><p><strong>Tu control:</strong> puedes modificar visibilidad o eliminar tu registro desde Configuración.</p></div>
           </div>

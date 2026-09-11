@@ -1,7 +1,12 @@
+import { useState } from "react";
 import { useApp } from "../context/AppContext";
 
 export default function Mentors() {
-  const { mentors } = useApp();
+  const { mentors, catalogProviders, contactProvider } = useApp();
+  const [contacting, setContacting] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+  const send = async (providerId: string) => { try { await contactProvider(providerId, message); setNotice("Solicitud enviada. El mentor decidirá si abre el chat."); setContacting(null); setMessage(""); } catch (err) { setNotice(err instanceof Error ? err.message : "No se pudo enviar la solicitud."); } };
   return (
     <div className="stack" style={{ gap: 20 }}>
       <div className="stack" style={{ gap: 4 }}>
@@ -34,10 +39,12 @@ export default function Mentors() {
               <span className="muted">
                 {m.location} · {m.businessesOpened} negocios · ★ {m.rating}
               </span>
+              {(() => { const provider = catalogProviders.find((p) => p.name === m.name); return provider && (contacting === m.id ? <div className="stack" style={{ gap: 7, marginTop: 8 }}><textarea rows={2} maxLength={1200} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="¿Qué te gustaría conversar?" /><div className="row" style={{ gap: 8 }}><button className="btn btn-primary" disabled={!message.trim()} onClick={() => send(provider.id)}>Solicitar conversación</button><button className="btn btn-ghost" onClick={() => setContacting(null)}>Cancelar</button></div></div> : <button className="btn btn-secondary" style={{ width: "fit-content", marginTop: 8 }} onClick={() => { setContacting(m.id); setNotice(null); }}>Hablar con mentor</button>); })()}
             </div>
           </div>
         ))}
       </div>
+      {notice && <p className="muted" role="status">{notice}</p>}
     </div>
   );
 }

@@ -28,7 +28,7 @@ async function request<T>(path: string, options: RequestInit & { token?: string 
 
 interface AuthResponse {
   token: string;
-  user: { id: string; email: string; name: string | null; role: "entrepreneur" | "provider"; created_at: string };
+  user: { id: string; email: string; name: string | null; avatar_url?: string | null; role: "entrepreneur" | "provider"; created_at: string };
 }
 
 export function signup(email: string, password: string, name: string | undefined, role: "entrepreneur" | "provider") {
@@ -77,7 +77,7 @@ interface ServerProviderProfile {
 }
 
 export interface FullProfile {
-  user: { id: string; email: string; name: string | null; role: "entrepreneur" | "provider" } | null;
+  user: { id: string; email: string; name: string | null; avatar_url?: string | null; role: "entrepreneur" | "provider" } | null;
   businessProfile: ServerBusinessProfile | null;
   report: ReportData | null;
   progress: ServerProgress;
@@ -92,7 +92,7 @@ export function fetchMe(token: string) {
 
 export function toClientUser(u: FullProfile["user"]): User | null {
   if (!u) return null;
-  return { email: u.email, name: u.name ?? undefined, role: u.role };
+  return { email: u.email, name: u.name ?? undefined, avatarUrl: u.avatar_url ?? undefined, role: u.role };
 }
 
 export function toClientBusinessForm(p: ServerBusinessProfile | null): BusinessFormData | null {
@@ -168,6 +168,89 @@ export function updateRoleRemote(token: string, role: "entrepreneur" | "provider
   return request("/api/me/role", { method: "PUT", token, body: JSON.stringify({ role }) });
 }
 
+export function updateUserProfileRemote(token: string, patch: { name?: string | null; avatarUrl?: string | null }) {
+  return request<FullProfile["user"]>("/api/me/profile", { method: "PATCH", token, body: JSON.stringify(patch) });
+}
+
 export function deleteAccountRemote(token: string) {
   return request<void>("/api/me", { method: "DELETE", token });
+}
+
+export interface CommunityPost {
+  id: string;
+  parentId: string | null;
+  body: string;
+  createdAt: string;
+  author: string;
+  businessType: string;
+  location: string;
+}
+
+export function fetchCommunityPosts() { return request<CommunityPost[]>("/api/community/posts"); }
+export function createCommunityPostRemote(token: string, body: string, parentId?: string) {
+  return request<CommunityPost>("/api/me/community/posts", { method: "POST", token, body: JSON.stringify({ body, parentId }) });
+}
+export function startConversationRemote(token: string, providerId: string, body: string) {
+  return request("/api/me/conversations", { method: "POST", token, body: JSON.stringify({ providerId, body }) });
+}
+
+export interface Conversation {
+  id: string;
+  providerCatalogId: string;
+  counterpart: { name: string; role: "provider" | "entrepreneur" };
+  status: "pending" | "accepted";
+  teamStatus: "none" | "invited" | "active";
+  request: { category: string | null; city: string | null } | null;
+  createdAt: string;
+  messages: { id: string; body: string; sentByMe: boolean; createdAt: string }[];
+}
+
+export function fetchConversations(token: string) { return request<Conversation[]>("/api/me/conversations", { token }); }
+export function sendConversationMessageRemote(token: string, conversationId: string, body: string) {
+  return request(`/api/me/conversations/${encodeURIComponent(conversationId)}/messages`, { method: "POST", token, body: JSON.stringify({ body }) });
+}
+export function acceptConversationRemote(token: string, conversationId: string) {
+  return request(`/api/me/conversations/${encodeURIComponent(conversationId)}/accept`, { method: "POST", token });
+}
+
+export interface WorkspaceTask {
+  id: string;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  completed: boolean;
+  createdAt: string;
+}
+
+export interface WorkspaceFile {
+  id: string;
+  name: string;
+  mimeType: "text/csv";
+  dataUrl: string;
+  createdAt: string;
+}
+
+export interface Workspace {
+  conversationId: string;
+  providerCatalogId: string;
+  collaborator: { name: string; role: "provider" | "entrepreneur" };
+  tasks: WorkspaceTask[];
+  files: WorkspaceFile[];
+}
+
+export function inviteConversationToTeamRemote(token: string, conversationId: string) {
+  return request(`/api/me/conversations/${encodeURIComponent(conversationId)}/team-invite`, { method: "POST", token });
+}
+export function acceptTeamInviteRemote(token: string, conversationId: string) {
+  return request(`/api/me/conversations/${encodeURIComponent(conversationId)}/team-accept`, { method: "POST", token });
+}
+export function fetchWorkspace(token: string) { return request<Workspace[]>("/api/me/workspace", { token }); }
+export function createWorkspaceItemRemote(token: string, conversationId: string, input: { title: string; description?: string; dueDate?: string }) {
+  return request(`/api/me/workspace/${encodeURIComponent(conversationId)}/items`, { method: "POST", token, body: JSON.stringify(input) });
+}
+export function completeWorkspaceItemRemote(token: string, itemId: string, completed: boolean) {
+  return request(`/api/me/workspace/items/${encodeURIComponent(itemId)}`, { method: "PATCH", token, body: JSON.stringify({ completed }) });
+}
+export function uploadWorkspaceCsvRemote(token: string, conversationId: string, input: { name: string; contentBase64: string }) {
+  return request(`/api/me/workspace/${encodeURIComponent(conversationId)}/files`, { method: "POST", token, body: JSON.stringify({ ...input, mimeType: "text/csv" }) });
 }

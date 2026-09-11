@@ -1,0 +1,77 @@
+name: tlacuachic
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tlacuachic
+      POSTGRES_USER: tlacuachic
+      # Local-only convenience default. Never use this value in Railway.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tlacuachic_local_only}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tlacuachic -d tlacuachic"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    ports:
+      - "5432:5432"
+    volumes:
+      - tlacuachic-postgres:/var/lib/postgresql/data
+
+  catalog:
+    build: ./services/catalog-service
+    environment:
+      PORT: 4200
+      DATABASE_URL: postgresql://tlacuachic:${POSTGRES_PASSWORD:-tlacuachic_local_only}@postgres:5432/tlacuachic
+      INTERNAL_API_KEY: ${CATALOG_INTERNAL_API_KEY:-local_catalog_key_change_me}
+      ALLOWED_ORIGINS: http://localhost:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4200:4200"
+
+  users:
+    build: ./services/user-service
+    environment:
+      PORT: 4100
+      DATABASE_URL: postgresql://tlacuachic:${POSTGRES_PASSWORD:-tlacuachic_local_only}@postgres:5432/tlacuachic
+      JWT_SECRET: ${JWT_SECRET:-local_jwt_change_me_before_any_public_deploy}
+      CATALOG_SERVICE_URL: http://catalog:4200
+      CATALOG_INTERNAL_API_KEY: ${CATALOG_INTERNAL_API_KEY:-local_catalog_key_change_me}
+      ALLOWED_ORIGINS: http://localhost:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+      catalog:
+        condition: service_started
+    ports:
+      - "4100:4100"
+
+  market:
+    build: ./server
+    environment:
+      PORT: 4000
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-deepseek/deepseek-chat-v3.1}
+      OPENROUTER_REFERER: http://localhost:5173
+      ALLOWED_ORIGINS: http://localhost:5173
+    ports:
+      - "4000:4000"
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_URL: http://localhost:4000
+        VITE_USER_SERVICE_URL: http://localhost:4100
+        VITE_CATALOG_SERVICE_URL: http://localhost:4200
+    depends_on:
+      - users
+      - catalog
+      - market
+    ports:
+      - "5173:5173"
+
+volumes:
+  tlacuachic-postgres:

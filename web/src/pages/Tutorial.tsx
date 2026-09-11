@@ -21,13 +21,13 @@ const flowSteps = [
   {
     icon: IconGrid,
     title: "2. Generamos tu reporte con datos reales",
-    body: "Contamos negocios similares reales cerca de tu ciudad (OpenStreetMap) y le pedimos a la IA que razone un panorama con eso, tu presupuesto y tu descripción — no un número inventado al azar.",
+    body: "Contamos negocios similares reales cerca de tu ciudad con DENUE de INEGI en la ciudad piloto y le pedimos a la IA que razone un panorama con eso, tu presupuesto y tu descripción — no un número inventado al azar.",
     detail: "Siempre verás si un dato es real, una estimación razonada por IA, o un cálculo local (cuando la IA no está disponible en ese momento). Nunca se presenta una estimación como si fuera oficial.",
   },
   {
     icon: IconMap,
     title: "3. Decides tu zona",
-    body: "Antes del dashboard, comparas tres señales por zona — oferta (real), demanda (estimada) y costo (estimado) — y eliges si estás explorando o ya tienes un local en mente.",
+    body: "Antes del dashboard, exploras la oferta registrada por zona y eliges si estás explorando o ya tienes un local en mente. Las señales que son estimaciones siempre se etiquetan como tales.",
     detail: null,
   },
   {

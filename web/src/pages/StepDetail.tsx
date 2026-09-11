@@ -8,6 +8,7 @@ export default function StepDetail() {
   const navigate = useNavigate();
   const { steps, completeStep, team, toggleTeamProvider, catalogProviders: providers } = useApp();
   const [evidenceByStep, setEvidenceByStep] = useState<Record<string, string[]>>({});
+  const [isCompleting, setIsCompleting] = useState(false);
 
   const step = steps.find((s) => s.id === stepId);
 
@@ -137,6 +138,7 @@ export default function StepDetail() {
                       <strong style={{ fontSize: 13 }}>{p.name}</strong>
                       <span className="pill">{providerKindLabel[p.kind]}</span>
                       {p.isAI && <span className="pill pill-warn">Agente de IA</span>}
+                      {p.isDemo && <span className="pill">Perfil demo</span>}
                     </div>
                     <span className="muted" style={{ fontSize: 12.5 }}>{p.description}</span>
                     <span className="muted" style={{ fontSize: 12 }}>{p.location} · ★ {p.rating}</span>
@@ -159,12 +161,14 @@ export default function StepDetail() {
 
       <button
         className="btn btn-primary"
-        disabled={isCompleted || !evidenceComplete}
+        disabled={isCompleted || !evidenceComplete || isCompleting}
         onClick={() => {
           completeStep(step.id);
+          setIsCompleting(true);
+          window.setTimeout(() => navigate("/roadmap", { state: { completedStepId: step.id } }), 620);
         }}
       >
-        {isCompleted ? "Paso confirmado" : evidenceComplete ? "Confirmar evidencia y completar" : `Confirma ${step.detail.evidence.length - confirmedEvidence.length} evidencia${step.detail.evidence.length - confirmedEvidence.length === 1 ? "" : "s"}`}
+        {isCompleted ? "Paso confirmado" : isCompleting ? "Validando evidencia…" : evidenceComplete ? "Confirmar evidencia y completar" : `Confirma ${step.detail.evidence.length - confirmedEvidence.length} evidencia${step.detail.evidence.length - confirmedEvidence.length === 1 ? "" : "s"}`}
       </button>
 
       {isCompleted && (
