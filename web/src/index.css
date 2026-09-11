@@ -633,6 +633,46 @@ p {
 .map-scale.reverse span:nth-child(1) { background: #1f6feb; }
 .map-scale.reverse span:nth-child(3) { background: #d6d8d4; }
 
+/* ---------- Heatmap workspace ---------- */
+
+.heatmap-page { display: grid; gap: 24px; }
+.heatmap-heading { display: flex; justify-content: space-between; gap: 32px; align-items: flex-end; }
+.heatmap-heading > div:first-child { max-width: 750px; }
+.heatmap-heading h1 { max-width: 680px; margin: 12px 0 8px; font-family: "Newsreader", Georgia, serif; font-size: clamp(36px, 4vw, 56px); letter-spacing: -.045em; line-height: .96; }
+.heatmap-heading p { max-width: 670px; color: var(--secondaryText); }
+.heatmap-proof { display: flex; align-items: center; gap: 8px; white-space: nowrap; color: var(--secondaryText); font-size: 12px; font-weight: 650; }
+.heatmap-proof span { width: 8px; height: 8px; border-radius: 50%; background: #1f6feb; }
+.heatmap-proof.unavailable span { background: #a47d2a; }
+.heatmap-tabs { display: flex; border-top: 1px solid var(--mainBorder); border-bottom: 1px solid var(--mainBorder); }
+.heatmap-tabs button { position: relative; min-width: 132px; padding: 15px 18px; border: 0; border-right: 1px solid var(--mainBorder); background: transparent; color: var(--secondaryText); cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; text-align: left; }
+.heatmap-tabs button:hover { color: var(--primaryText); background: var(--secondaryBg); }
+.heatmap-tabs button.active { color: var(--primaryText); }
+.heatmap-tabs button.active::after { position: absolute; right: 18px; bottom: -1px; left: 18px; height: 2px; background: var(--action); content: ""; }
+.heatmap-workspace { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, .7fr); min-height: 560px; border: 1px solid var(--mainBorder); background: var(--primaryBg); }
+.heatmap-map { position: relative; min-height: 560px; border-right: 1px solid var(--mainBorder); overflow: hidden; background: #e8ebe5; }
+.heatmap-map .leaflet-container { font-family: "Geist", -apple-system, sans-serif; }
+.heatmap-map-label, .heatmap-map-note { position: absolute; z-index: 500; border: 1px solid var(--mainBorder); background: rgba(255,254,250,.96); }
+.heatmap-map-label { top: 18px; left: 70px; display: grid; gap: 2px; padding: 11px 13px; font-size: 12px; }
+.heatmap-map-label span { color: var(--secondaryText); font-size: 11px; }
+.heatmap-map-note { right: 18px; bottom: 28px; padding: 9px 11px; color: var(--secondaryText); font-size: 11px; }
+.heatmap-loading { display: grid; height: 100%; min-height: 560px; place-items: center; color: var(--secondaryText); }
+.heatmap-insight { display: grid; align-content: start; gap: 24px; padding: 26px; }
+.heatmap-scale { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; color: var(--secondaryText); font-size: 10px; }
+.heatmap-scale > div { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; height: 6px; }
+.heatmap-scale i:nth-child(1) { background: #d67b55; }.heatmap-scale i:nth-child(2) { background: #e4c866; }.heatmap-scale i:nth-child(3) { background: #77a4e8; }.heatmap-scale i:nth-child(4) { background: #1f6feb; }
+.heatmap-copy { display: grid; gap: 7px; }
+.heatmap-copy > span, .heatmap-zone-report > span, .heatmap-best > span { color: var(--secondaryText); font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
+.heatmap-copy h2, .heatmap-zone-report h3 { margin: 0; font-size: 26px; letter-spacing: -.04em; }
+.heatmap-copy p { margin: 0; color: var(--secondaryText); font-size: 13px; line-height: 1.55; }
+.heatmap-zone-report { display: grid; gap: 8px; padding: 18px 0; border-top: 1px solid var(--mainBorder); border-bottom: 1px solid var(--mainBorder); }
+.heatmap-zone-report > b { font-size: 42px; line-height: 1; letter-spacing: -.06em; }
+.heatmap-zone-report dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 0; }
+.heatmap-zone-report dl div { display: grid; gap: 2px; }.heatmap-zone-report dt { color: var(--secondaryText); font-size: 10px; }.heatmap-zone-report dd { margin: 0; font-size: 14px; font-weight: 700; }
+.heatmap-zone-report p, .heatmap-best p { margin: 2px 0 0; color: var(--secondaryText); font-size: 12px; line-height: 1.5; }
+.heatmap-empty { display: grid; gap: 5px; padding: 17px 0; border-top: 1px solid var(--mainBorder); border-bottom: 1px solid var(--mainBorder); color: var(--secondaryText); font-size: 13px; }.heatmap-empty strong { color: var(--primaryText); }
+.heatmap-best { display: grid; gap: 4px; }.heatmap-best strong { font-size: 20px; letter-spacing: -.03em; }
+.heatmap-disclaimer { color: var(--secondaryText); font-size: 12px; }
+
 /* ---------- Privacy, map interpretation and minimal onboarding ---------- */
 
 .privacy-choice, .settings-section {
@@ -684,6 +724,16 @@ p {
 }
 
 .onboarding-brand { color: var(--primaryText); font-weight: 750; letter-spacing: -.02em; }
+.country-preview-page { width: min(100% - 96px, 1180px); min-height: calc(100vh - 58px); margin: 0 auto; display: grid; grid-template-columns: minmax(280px, .72fr) minmax(520px, 1.3fr); grid-template-rows: 1fr auto; gap: 30px 56px; padding: clamp(44px, 7vw, 92px) 0 54px; }
+.country-preview-copy { align-self: center; display: grid; gap: 16px; max-width: 430px; }
+.country-preview-copy h1 { margin: 0; font-family: "Newsreader", Georgia, serif; font-size: clamp(44px, 4.5vw, 66px); letter-spacing: -.05em; line-height: .92; }
+.country-preview-copy p { margin: 0; color: var(--secondaryText); font-size: 15px; line-height: 1.65; }
+.country-preview-copy dl { display: grid; gap: 12px; margin: 8px 0 0; border-top: 1px solid var(--mainBorder); }
+.country-preview-copy dl div { display: grid; gap: 3px; padding-top: 12px; }.country-preview-copy dt { color: var(--secondaryText); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }.country-preview-copy dd { margin: 0; font-size: 14px; font-weight: 700; }
+.country-preview-map { position: relative; min-height: 530px; overflow: hidden; border: 1px solid var(--mainBorder); background: #e8ebe5; }
+.country-preview-map .leaflet-container { font-family: "Geist", -apple-system, sans-serif; filter: saturate(.72) contrast(.96); }
+.country-preview-caption { position: absolute; right: 16px; bottom: 16px; z-index: 500; padding: 9px 11px; border: 1px solid var(--mainBorder); background: rgba(255,254,250,.94); color: var(--secondaryText); font-size: 11px; }
+.country-preview-action { grid-column: 2; display: flex; align-items: center; gap: 14px; }.country-preview-action span { color: var(--secondaryText); font-size: 12px; }
 .map-onboarding-main { max-width: 1180px; margin: 0 auto; padding: clamp(32px, 5vw, 74px) clamp(20px, 4vw, 48px) 72px; }
 .map-onboarding-intro { max-width: 760px; display: grid; gap: 12px; }
 .map-onboarding-intro h1 { font-size: clamp(34px, 4.5vw, 58px); letter-spacing: -.055em; line-height: .97; max-width: 650px; }
@@ -728,6 +778,11 @@ p {
 
 @media (max-width: 920px) {
   .map-decision-grid, .location-choice { grid-template-columns: 1fr; }
+  .country-preview-page { grid-template-columns: 1fr; width: min(100% - 40px, 760px); }
+  .country-preview-map { min-height: 420px; }
+  .country-preview-action { grid-column: 1; }
+  .heatmap-heading, .heatmap-workspace { grid-template-columns: 1fr; display: grid; }
+  .heatmap-map { min-height: 460px; border-right: 0; border-bottom: 1px solid var(--mainBorder); }
   .map-canvas { border-right: 0; border-bottom: 1px solid var(--mainBorder); height: 430px; }
   .location-choice .btn { justify-self: start; }
 }

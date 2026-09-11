@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CircleMarker, MapContainer, TileLayer, Tooltip as LeafletTooltip } from "react-leaflet";
+import { CircleMarker, MapContainer, TileLayer, Tooltip as LeafletTooltip, useMap } from "react-leaflet";
 import { useApp } from "../context/AppContext";
 import { generateMockHeatmap } from "../data/mockData";
 import { useCityCenter } from "../hooks/useCityCenter";
@@ -11,6 +11,54 @@ type Signal = "supply" | "demand" | "cost";
 
 const ROW_OFFSET = [-0.011, 0, 0.011];
 const COL_OFFSET = [-0.014, 0, 0.014];
+
+const COUNTRY_VIEWS: Record<string, { label: string; center: [number, number]; zoom: number }> = {
+  Mexico: { label: "México", center: [23.6345, -102.5528], zoom: 5 },
+  Colombia: { label: "Colombia", center: [4.5709, -74.2973], zoom: 5 },
+  Argentina: { label: "Argentina", center: [-38.4161, -63.6167], zoom: 4 },
+  Chile: { label: "Chile", center: [-35.6751, -71.543], zoom: 4 },
+  Peru: { label: "Perú", center: [-9.19, -75.0152], zoom: 5 },
+  Otro: { label: "tu país", center: [19.4326, -99.1332], zoom: 5 },
+};
+
+function FlyTo({ target, zoom }: { target: [number, number]; zoom: number }) {
+  const map = useMap();
+  useEffect(() => { map.flyTo(target, zoom, { duration: 1.15 }); }, [map, target, zoom]);
+  return null;
+}
+
+function CountryPreview({ country, city, cityCenter, onComplete }: { country: string; city: string; cityCenter: [number, number] | null; onComplete: () => void }) {
+  const view = COUNTRY_VIEWS[country] ?? COUNTRY_VIEWS.Otro;
+  const [zooming, setZooming] = useState(false);
+  const target = zooming && cityCenter ? cityCenter : view.center;
+  const zoom = zooming && cityCenter ? 13 : view.zoom;
+
+  const startZoom = () => {
+    setZooming(true);
+    window.setTimeout(onComplete, 1150);
+  };
+
+  return (
+    <main className="country-preview-page">
+      <section className="country-preview-copy">
+        <span className="pill">Tu punto de partida</span>
+        <h1>Tu negocio empieza en {view.label}.</h1>
+        <p>Primero ubicamos tu ciudad. Después acercamos el mapa para leer las señales que importan antes de invertir.</p>
+        <dl><div><dt>Ciudad</dt><dd>{city}</dd></div><div><dt>Después verás</dt><dd>Oferta, demanda y costos</dd></div></dl>
+      </section>
+      <section className={`country-preview-map${zooming ? " zooming" : ""}`}>
+        <MapContainer center={view.center} zoom={view.zoom} scrollWheelZoom={false} zoomControl={false} dragging={false} style={{ height: "100%", width: "100%" }}>
+          <FlyTo target={target} zoom={zoom} />
+          <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          {!zooming && <CircleMarker center={view.center} radius={8} pathOptions={{ color: "#fff", weight: 2, fillColor: "#17191b", fillOpacity: 1 }}><LeafletTooltip permanent direction="top">{view.label}</LeafletTooltip></CircleMarker>}
+          {zooming && cityCenter && <CircleMarker center={cityCenter} radius={12} pathOptions={{ color: "#fff", weight: 2, fillColor: "#1f6feb", fillOpacity: 1 }}><LeafletTooltip permanent direction="top">{city}</LeafletTooltip></CircleMarker>}
+        </MapContainer>
+        <div className="country-preview-caption">{zooming ? `Acercándonos a ${city}…` : `${view.label} · mapa base`}</div>
+      </section>
+      <div className="country-preview-action"><button className="btn btn-primary" disabled={!cityCenter || zooming} onClick={startZoom}>{zooming ? "Abriendo análisis…" : `Ver mi zona en ${city}`}</button><span>La oferta se consultará con lugares reales de OpenStreetMap.</span></div>
+    </main>
+  );
+}
 
 const copy: Record<Signal, { label: string; source: string; question: string; summary: (z: ZoneMetrics) => string }> = {
   supply: {
@@ -45,6 +93,7 @@ export default function MapOnboarding() {
   const { businessForm, preferences, savePreferences } = useApp();
   const [signal, setSignal] = useState<Signal>("supply");
   const [selected, setSelected] = useState<ZoneMetrics | null>(null);
+  const [stage, setStage] = useState<"country" | "analysis">("country");
   const { center, status: geoStatus } = useCityCenter(businessForm);
   const { data: density, status: densityStatus } = useDensity(center, businessForm?.category ?? null);
 
@@ -64,6 +113,15 @@ export default function MapOnboarding() {
 
   if (!businessForm || !heatmap) return null;
 
+  if (stage === "country") {
+    return (
+      <div className="map-onboarding">
+        <header className="onboarding-header"><div className="onboarding-brand">Tlacuachip</div><span>Decisión de zona · 1 de 2</span></header>
+        <CountryPreview country={businessForm.location.country} city={businessForm.location.city} cityCenter={center} onComplete={() => setStage("analysis")} />
+      </div>
+    );
+  }
+
   const selectedZone = selected ?? heatmap.find((zone) => zone.id === preferences.selectedZoneId) ?? heatmap[4];
   const positions = center ? heatmap.map((zone) => ({ ...zone, lat: center[0] + ROW_OFFSET[zone.row], lng: center[1] + COL_OFFSET[zone.col] })) : [];
   const realCount = densityStatus === "ok" ? density?.totalPoints : undefined;
@@ -76,7 +134,7 @@ export default function MapOnboarding() {
     <div className="map-onboarding">
       <header className="onboarding-header">
         <div className="onboarding-brand">Tlacuachip</div>
-        <span>Decisión de zona · 1 de 1</span>
+        <span>Decisión de zona · 2 de 2</span>
       </header>
 
       <main className="map-onboarding-main">

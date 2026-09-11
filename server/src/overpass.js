@@ -21,7 +21,8 @@ function buildQuery(bbox, tags) {
 
 /**
  * Fetches real OpenStreetMap points of interest for a category inside a
- * bounding box. Returns { points: [{lat, lng}], source: "osm" } on success,
+ * bounding box. Returns named points so the client can render the actual
+ * places behind a supply reading, not only an aggregated score.
  * or throws so the caller can fall back to an estimate.
  */
 export async function fetchRealPoints(bbox, category) {
@@ -50,8 +51,10 @@ export async function fetchRealPoints(bbox, category) {
     const json = await res.json();
     const points = (json.elements ?? [])
       .map((el) => {
-        if (el.type === "node") return { lat: el.lat, lng: el.lon };
-        if (el.center) return { lat: el.center.lat, lng: el.center.lon };
+        const name = el.tags?.name ?? "Negocio similar";
+        const kind = el.tags?.amenity ?? el.tags?.shop ?? "negocio";
+        if (el.type === "node") return { lat: el.lat, lng: el.lon, name, kind };
+        if (el.center) return { lat: el.center.lat, lng: el.center.lon, name, kind };
         return null;
       })
       .filter(Boolean);
