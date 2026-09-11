@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import type { Workspace } from "../lib/userApi";
 import { getAiStatus, postJson, type AiStatus } from "../lib/api";
 import { buildMinimizedProfile, describeMinimizedProfile, NEVER_SHARED } from "../lib/privacy";
 import { providerKindLabel, rankProviders, toRecommendations } from "../lib/matching";
@@ -16,12 +17,15 @@ interface MatchResponse {
 
 export default function Team() {
   const navigate = useNavigate();
-  const { businessForm, preferences, steps, team, toggleTeamProvider, catalogProviders: providers } = useApp();
+  const { businessForm, preferences, steps, catalogProviders: providers, getWorkspace, completeWorkspaceItem } = useApp();
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
   const [showPayload, setShowPayload] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<MatchResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [workspace, setWorkspace] = useState<Workspace[]>([]);
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [updatingTask, setUpdatingTask] = useState<string | null>(null);
 
   useEffect(() => {
     if (!businessForm) navigate("/formulario", { replace: true });
@@ -36,6 +40,17 @@ export default function Team() {
       cancelled = true;
     };
   }, []);
+
+  const loadWorkspace = async () => {
+    try {
+      setWorkspaceError(null);
+      setWorkspace(await getWorkspace());
+    } catch (err) {
+      setWorkspaceError(err instanceof Error ? err.message : "No se pudo cargar tu equipo.");
+    }
+  };
+
+  useEffect(() => { void loadWorkspace(); }, []); // authenticated AppContext supplies the current token
 
   const profile = useMemo(
     () => (businessForm ? buildMinimizedProfile(businessForm, preferences, steps) : null),
@@ -84,7 +99,6 @@ export default function Team() {
   const renderCard = (rec: TeamRecommendation) => {
     const p = byId.get(rec.providerId) as Provider | undefined;
     if (!p) return null;
-    const inTeam = team.includes(p.id);
     return (
       <div key={p.id} className="card stack" style={{ gap: 8 }}>
         <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
@@ -95,13 +109,12 @@ export default function Team() {
           <div className="row" style={{ gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
             <span className="pill">{providerKindLabel[p.kind]}</span>
             {p.isAI && <span className="pill pill-warn">Agente de IA</span>}
+            {p.isDemo && <span className="pill">Perfil demo</span>}
           </div>
         </div>
         <p>{p.description}</p>
         <p className="team-reason">Por qué: {rec.reason}</p>
-        <button className={`btn ${inTeam ? "btn-secondary" : "btn-primary"}`} onClick={() => toggleTeamProvider(p.id)}>
-          {inTeam ? "Quitar de mi equipo" : "Guardar en mi equipo"}
-        </button>
+        <button className="btn btn-primary" onClick={() => navigate("/marketplace")}>Hablar primero</button>
       </div>
     );
   };
@@ -175,14 +188,32 @@ export default function Team() {
         </div>
       )}
 
-      {team.length > 0 && (
-        <div className="card stack" style={{ gap: 6 }}>
-          <h2>Mi equipo ({team.length})</h2>
-          <span className="muted" style={{ fontSize: 12.5 }}>
-            {team.map((id) => byId.get(id)?.name).filter(Boolean).join(" · ")}
-          </span>
+      <section className="stack" style={{ gap: 10 }}>
+        <div className="stack" style={{ gap: 2 }}>
+          <h2>Equipo activo</h2>
+          <p className="muted" style={{ fontSize: 13 }}>Un perfil no se añade aquí automáticamente: primero hablan, ambos aceptan colaborar y entonces el trabajo queda centralizado.</p>
         </div>
-      )}
+        {workspaceError && <p className="muted" style={{ color: "var(--warn)", fontSize: 13 }}>{workspaceError}</p>}
+        {workspace.length === 0 ? <div className="card"><p className="muted">Aún no tienes una colaboración activa. Después de aceptar una conversación, envía una invitación desde Mensajes.</p></div> : <div className="grid-2">{workspace.map((space) => (
+          <article className="card stack" style={{ gap: 12 }} key={space.conversationId}>
+            <div className="row" style={{ justifyContent: "space-between", gap: 10 }}>
+              <div className="stack" style={{ gap: 2 }}><h3>{space.collaborator.name}</h3><span className="muted" style={{ fontSize: 12 }}>{space.collaborator.role === "provider" ? "Profesional en tu negocio" : "Emprendedor/a"}</span></div>
+              <span className="pill pill-success">Activo</span>
+            </div>
+            <div className="stack" style={{ gap: 6 }}>
+              <strong style={{ fontSize: 13 }}>Plan y pendientes</strong>
+              {space.tasks.length === 0 ? <p className="muted" style={{ fontSize: 13 }}>Tu profesional todavía no agregó tareas.</p> : space.tasks.map((task) => <label className="row" style={{ alignItems: "flex-start", gap: 8 }} key={task.id}>
+                <input type="checkbox" checked={task.completed} disabled={updatingTask === task.id} onChange={async (event) => { setUpdatingTask(task.id); try { await completeWorkspaceItem(task.id, event.target.checked); await loadWorkspace(); } finally { setUpdatingTask(null); } }} />
+                <span className="stack" style={{ gap: 2 }}><strong style={{ fontSize: 13, textDecoration: task.completed ? "line-through" : undefined }}>{task.title}</strong>{task.description && <span className="muted" style={{ fontSize: 12 }}>{task.description}</span>}{task.dueDate && <span className="muted" style={{ fontSize: 12 }}>Fecha: {task.dueDate}</span>}</span>
+              </label>)}
+            </div>
+            <div className="stack" style={{ gap: 6 }}>
+              <strong style={{ fontSize: 13 }}>Entregables</strong>
+              {space.files.length === 0 ? <span className="muted" style={{ fontSize: 13 }}>Sin archivos todavía.</span> : space.files.map((file) => <a className="btn btn-secondary" style={{ width: "fit-content" }} key={file.id} href={file.dataUrl} download={file.name}>Descargar {file.name}</a>)}
+            </div>
+          </article>
+        ))}</div>}
+      </section>
     </div>
   );
 }

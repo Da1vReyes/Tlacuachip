@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { providerKindLabel } from "../lib/matching";
 import { IconRoute, IconChart, IconMap, IconUsers, IconBag, IconChat, IconLeaf, IconArrowLeft, IconGrid, IconSettings, IconForm, IconHelp } from "./icons";
+import ChatDock from "./ChatDock";
 
 const fullBleedRoutes = ["/", "/auth", "/formulario", "/onboarding/mapa"];
 
@@ -18,6 +19,7 @@ const entrepreneurNav: NavItem[] = [
   { path: "/equipo", label: "Tu equipo", icon: IconUsers },
   { path: "/mentores", label: "Mentores", icon: IconChat },
   { path: "/marketplace", label: "Marketplace", icon: IconBag },
+  { path: "/mensajes", label: "Mensajes", icon: IconChat },
   { path: "/comunidad", label: "Comunidad", icon: IconChat },
   { section: "Ayuda" },
   { path: "/tutorial", label: "Cómo funciona", icon: IconHelp },
@@ -28,6 +30,7 @@ const providerNav: NavItem[] = [
   { section: "Tu servicio" },
   { path: "/proveedor/panel", label: "Panel", icon: IconGrid },
   { path: "/proveedor/nuevo", label: "Mi perfil", icon: IconForm },
+  { path: "/mensajes", label: "Mensajes", icon: IconChat },
   { section: "Red" },
   { path: "/comunidad", label: "Comunidad", icon: IconChat },
   { section: "Ayuda" },
@@ -49,6 +52,7 @@ const titles: Record<string, string> = {
   "/comunidad": "Comunidad",
   "/configuracion": "Configuración",
   "/tutorial": "Cómo funciona",
+  "/mensajes": "Mensajes",
 };
 
 export default function AppShell({ children }: { children: ReactNode }) {
@@ -122,13 +126,14 @@ export default function AppShell({ children }: { children: ReactNode }) {
             )}
             <span className="topbar-title">{title}</span>
           </div>
-          <div className="topbar-avatar">{(user?.name ?? user?.email ?? "A").charAt(0).toUpperCase()}</div>
+          <button className="topbar-avatar" aria-label="Abrir perfil y configuración" onClick={() => navigate("/configuracion")}>{user?.avatarUrl ? <img src={user.avatarUrl} alt="Tu foto de perfil" /> : (user?.name ?? user?.email ?? "A").charAt(0).toUpperCase()}</button>
         </header>
         <main className="content">
           <div key={location.pathname} className="page-enter">
             {children}
           </div>
         </main>
+        <ChatDock />
       </div>
     </div>
   );

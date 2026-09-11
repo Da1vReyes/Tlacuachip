@@ -86,9 +86,7 @@ export default function BusinessForm() {
       saveReport(report);
       navigate(user ? "/onboarding/mapa" : "/auth");
     } catch (err) {
-      // generateReport already falls back internally on network errors, so
-      // reaching here means something unexpected happened client-side.
-      setSubmitError(err instanceof Error ? err.message : "No se pudo generar tu reporte");
+      setSubmitError(err instanceof Error ? `${err.message}. Revisa tu conexión e inténtalo de nuevo; no mostramos un reporte inventado.` : "No se pudo generar tu reporte. Revisa tu conexión e inténtalo de nuevo.");
       setIsSubmitting(false);
     }
   };
@@ -132,7 +130,7 @@ export default function BusinessForm() {
               <span className="pill">Paso 1 de {TOTAL_STEPS}</span>
               <h1 className="wizard-question">Empecemos por tu idea.</h1>
               <p className="wizard-intro">No necesitas conocer todos los requisitos hoy. Cuéntanos qué quieres construir y después ordenaremos lo que vale la pena mirar: zona, presupuesto, trámites y apoyo.</p>
-              <label className="wizard-field-label" htmlFor="business-idea">Tu idea de negocio</label>
+              <label className="wizard-field-label" htmlFor="business-idea">Nombre o idea breve</label>
               <input
                 id="business-idea"
                 autoFocus
@@ -148,12 +146,12 @@ export default function BusinessForm() {
                   background: "transparent",
                   outline: "none",
                 }}
-                placeholder="Ej. Cafetería de especialidad"
+                placeholder="Ej. Café Nopal · café de especialidad de barrio"
                 value={businessType}
                 onChange={(e) => setBusinessType(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && goNext()}
               />
-              <p className="wizard-next">Después: categoría, presupuesto, ciudad, experiencia y una descripción más completa.</p>
+              <p className="wizard-next">No es la categoría. Danos una frase para reconocer tu proyecto; después elegimos el giro.</p>
             </div>
           )}
 

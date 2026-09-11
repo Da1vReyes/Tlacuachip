@@ -66,7 +66,7 @@ app.get("/api/density", async (req, res) => {
   const bbox = boundingBox(zones);
 
   try {
-    const { points, source } = await fetchRealPoints(bbox, category);
+    const { points, source, capturedAt } = await fetchRealPoints(bbox, category);
     const counts = bucketPoints(zones, points);
 
     const zonesOut = zones.map((z) => ({
@@ -76,9 +76,14 @@ app.get("/api/density", async (req, res) => {
       col: z.col,
       businessCount: counts[z.id],
       supplyScore: scoreFromCount(counts[z.id]),
+      // Temporary deterministic prototype signals. They are intentionally
+      // returned separately from the real DENUE count so the client can
+      // never present them as official data.
+      demandEstimate: Math.round(38 + ((Math.abs(Math.sin((z.lat * 23) + (z.lng * 17))) * 42)) - Math.min(counts[z.id] * 1.5, 12)),
+      costEstimate: Math.round(34 + (Math.abs(Math.sin((z.lat * 11) - (z.lng * 29))) * 48)),
     }));
 
-    res.json({ source, category, center: { lat, lng }, totalPoints: points.length, points, zones: zonesOut });
+    res.json({ source, capturedAt, category, center: { lat, lng }, totalPoints: points.length, points, zones: zonesOut, estimates: { synthetic: true, method: "señal temporal determinista para demo; no es renta, tráfico ni demanda observada" } });
   } catch (err) {
     console.error("[density] Overpass fetch failed:", err.message);
     res.status(502).json({ error: "upstream_unavailable", message: "Could not reach OpenStreetMap Overpass API" });

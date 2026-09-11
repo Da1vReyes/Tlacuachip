@@ -18,6 +18,13 @@ if (!process.env.DATABASE_URL) {
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
+  // The hosted demo database has a costly TLS handshake. Keep a small warm
+  // pool instead of paying that handshake on every login/profile request.
+  min: 1,
+  max: 4,
+  idleTimeoutMillis: 300_000,
+  connectionTimeoutMillis: 10_000,
+  keepAlive: true,
 });
 
 export async function migrate() {

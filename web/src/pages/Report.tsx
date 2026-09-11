@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import { getAiStatus, postJson, type AiStatus } from "../lib/api";
 import { buildMinimizedProfile } from "../lib/privacy";
 import { IconCheck } from "../components/icons";
+import { generateReport } from "../lib/report";
 
 interface InsightsResponse {
   source: "llm" | "fallback";
@@ -13,12 +14,13 @@ interface InsightsResponse {
 
 export default function Report() {
   const navigate = useNavigate();
-  const { businessForm, report, preferences, steps } = useApp();
+  const { businessForm, report, preferences, steps, saveReport } = useApp();
   const ready = Boolean(businessForm && report);
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
   const [aiResult, setAiResult] = useState<InsightsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshingReport, setRefreshingReport] = useState(false);
 
   useEffect(() => {
     if (!ready) navigate("/formulario", { replace: true });
@@ -64,6 +66,21 @@ export default function Report() {
   };
 
   const insights = aiResult?.insights ?? report.insights;
+  const sourceLabel = report.marketSource === "inegi_denue_snapshot" ? "DENUE de INEGI" : report.marketSource === "openstreetmap" ? "OpenStreetMap" : "un directorio georreferenciado";
+
+  const refreshReport = async () => {
+    setRefreshingReport(true);
+    setError(null);
+    try {
+      const refreshed = await generateReport(businessForm);
+      saveReport(refreshed);
+      setAiResult(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo actualizar el reporte");
+    } finally {
+      setRefreshingReport(false);
+    }
+  };
 
   return (
     <div className="stack" style={{ gap: 20 }}>
@@ -73,14 +90,14 @@ export default function Report() {
           {report.source === "llm" ? (
             <span className="pill pill-success">Generado con IA a partir de datos reales</span>
           ) : (
-            <span className="pill pill-warn">Estimación local (sin conexión a la IA)</span>
+            <span className="pill pill-warn">Lectura base · datos locales + supuestos transparentes</span>
           )}
         </div>
         <h1>Así está el mercado para "{businessForm.businessType}"</h1>
         <p>
           {report.osmAvailable
-            ? "El conteo de negocios en tu zona proviene de OpenStreetMap en tiempo real. "
-            : "No pudimos consultar OpenStreetMap en este momento, así que el conteo de negocios quedó en 0 — el resto del reporte sigue siendo válido como estimación. "}
+            ? `El conteo de negocios en tu zona proviene de ${sourceLabel}. `
+            : "No pudimos consultar un directorio georreferenciado en este momento, así que el conteo de negocios quedó en 0 — el resto del reporte sigue siendo una lectura base. "}
           Crecimiento, ingreso y supervivencia son una lectura razonada a partir de esos datos, no cifras oficiales. Nada de esto es una recomendación financiera.
         </p>
       </div>
@@ -91,24 +108,24 @@ export default function Report() {
           <div style={{ fontSize: 24, fontWeight: 700, color: "var(--accentBlue)" }}>
             +{report.sectorGrowthPercent}%
           </div>
-          <div className="muted">{report.sectorGrowthPeriod} · estimación</div>
+          <div className="muted">{report.sectorGrowthPeriod} · estimación IA</div>
         </div>
         <div className="card">
           <div className="muted">Negocios similares</div>
           <div style={{ fontSize: 24, fontWeight: 700 }}>{report.localBusinessCount}</div>
-          <div className="muted">{report.osmAvailable ? "dato real · OpenStreetMap" : "sin datos disponibles"}</div>
+          <div className="muted">{report.osmAvailable ? `dato real · ${sourceLabel}` : "sin datos disponibles"}</div>
         </div>
         <div className="card">
           <div className="muted">Ingreso mensual prom.</div>
           <div style={{ fontSize: 20, fontWeight: 700 }}>
             ${report.avgMonthlyRevenue.toLocaleString()} MXN
           </div>
-          <div className="muted">estimación</div>
+          <div className="muted">estimación IA · tu presupuesto</div>
         </div>
         <div className="card">
           <div className="muted">Sobrevive 5 años</div>
           <div style={{ fontSize: 20, fontWeight: 700 }}>{report.survivalRate5Years}%</div>
-          <div className="muted">estimación</div>
+          <div className="muted">estimación IA · no estadística oficial</div>
         </div>
       </div>
 
@@ -137,24 +154,30 @@ export default function Report() {
             ) : aiStatus && !aiStatus.configured ? (
               "IA no configurada en el servidor: se muestra la interpretación base local."
             ) : (
-              "Este reporte se generó sin conexión a la IA. Puedes pedir una interpretación ahora si el servicio ya está disponible."
+              "Esta versión se generó como lectura base. Puedes regenerarla con IA cuando el servicio esté disponible."
             )}
           </span>
           {error && <span className="muted" style={{ color: "var(--warn)", fontSize: 12.5 }}>La IA no respondió ({error}).</span>}
+          {report.source !== "llm" && <button className="btn btn-ghost" style={{ width: "fit-content" }} onClick={refreshReport} disabled={refreshingReport}>{refreshingReport ? "Actualizando lectura…" : "Regenerar reporte con IA"}</button>}
         </div>
 
-        <div className="card stack">
-          <h2>Fuentes</h2>
-          {report.sources.map((s) => (
+        <div className="card stack" id="metodologia">
+          <h2>Fuentes y método</h2>
+          <p className="muted" style={{ fontSize: 13 }}>La IA interpreta los insumos listados; no navega ni inventa fuentes. Los indicadores estimados no son cifras publicadas por INEGI.</p>
+          {(report.sources ?? []).map((s) => (
             <div key={s.name} className="stack" style={{ gap: 2 }}>
-              <a href={s.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, fontSize: 14 }}>
+              {s.url.startsWith("#") ? <span style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</span> : <a href={s.url} target="_blank" rel="noreferrer" style={{ fontWeight: 600, fontSize: 14 }}>
                 {s.name}
-              </a>
+              </a>}
               <span className="muted">
                 {s.publisher} · {s.year}
               </span>
             </div>
           ))}
+          <div className="stack" style={{ gap: 2, paddingTop: 8, borderTop: "1px solid var(--mainBorder)" }}>
+            <a href="https://www.inegi.org.mx/app/mapa/denue/" target="_blank" rel="noreferrer" style={{ fontWeight: 600, fontSize: 14 }}>Consulta el directorio original</a>
+            <span className="muted">DENUE de INEGI · valida nombre, giro y ubicación de establecimientos.</span>
+          </div>
         </div>
       </div>
 

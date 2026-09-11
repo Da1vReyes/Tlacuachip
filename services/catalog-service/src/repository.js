@@ -52,6 +52,7 @@ function providerRow(r) {
     name: r.name,
     kind: r.kind,
     isAI: r.is_ai,
+    isDemo: r.is_demo,
     category: r.category,
     type: r.type,
     location: r.location,
@@ -63,8 +64,20 @@ function providerRow(r) {
 }
 
 export async function listProviders() {
-  const { rows } = await pool.query("SELECT * FROM tlacuachic_providers ORDER BY created_at ASC");
+  // Legacy seed rows have no account behind them, so they remain hidden.
+  // Demo accounts created for an explicit test environment do have a real
+  // inbox and are returned with isDemo=true so the UI can label them clearly.
+  const { rows } = await pool.query("SELECT * FROM tlacuachic_providers WHERE is_demo = false OR user_id IS NOT NULL ORDER BY created_at ASC");
   return rows.map(providerRow);
+}
+
+export async function getProviderOwner(providerId) {
+  const { rows } = await pool.query(
+    "SELECT id, user_id, is_demo FROM tlacuachic_providers WHERE id = $1",
+    [providerId]
+  );
+  if (!rows[0]) return null;
+  return { providerId: rows[0].id, userId: rows[0].user_id, isDemo: rows[0].is_demo };
 }
 
 // profile comes from user-service's validateProviderProfile shape:
@@ -74,8 +87,8 @@ export async function upsertProviderForUser(userId, profile) {
   const location = `${profile.city}, ${profile.country}`;
   const { rows } = await pool.query(
     `INSERT INTO tlacuachic_providers
-       (id, user_id, name, kind, is_ai, category, type, location, city, country, rating, description, helps_with, updated_at)
-     VALUES ($1,$2,$3,$4,$5,'general','servicio',$6,$7,$8,5,$9,$10, now())
+       (id, user_id, name, kind, is_ai, category, type, location, city, country, rating, description, helps_with, is_demo, updated_at)
+     VALUES ($1,$2,$3,$4,$5,'general','servicio',$6,$7,$8,5,$9,$10,false, now())
      ON CONFLICT (user_id) DO UPDATE SET
        name = EXCLUDED.name,
        kind = EXCLUDED.kind,

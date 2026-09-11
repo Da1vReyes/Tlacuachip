@@ -10,8 +10,67 @@ CREATE TABLE IF NOT EXISTS tlacuachic_users (
   email         TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   name          TEXT,
+  avatar_url    TEXT,
   role          TEXT NOT NULL DEFAULT 'entrepreneur' CHECK (role IN ('entrepreneur', 'provider')),
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE tlacuachic_users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+
+-- A conversation only starts after an entrepreneur explicitly writes to a
+-- provider. Neither email nor exact budget is copied into these tables.
+CREATE TABLE IF NOT EXISTS tlacuachic_conversations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  entrepreneur_id UUID NOT NULL REFERENCES tlacuachic_users(id) ON DELETE CASCADE,
+  provider_id UUID NOT NULL REFERENCES tlacuachic_users(id) ON DELETE CASCADE,
+  provider_catalog_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted')),
+  team_status TEXT NOT NULL DEFAULT 'none' CHECK (team_status IN ('none', 'invited', 'active')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (entrepreneur_id, provider_id)
+);
+
+ALTER TABLE tlacuachic_conversations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending';
+ALTER TABLE tlacuachic_conversations ADD COLUMN IF NOT EXISTS team_status TEXT NOT NULL DEFAULT 'none';
+
+CREATE TABLE IF NOT EXISTS tlacuachic_workspace_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES tlacuachic_conversations(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES tlacuachic_users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL CHECK (char_length(title) BETWEEN 1 AND 160),
+  description TEXT,
+  due_date DATE,
+  completed BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Workspace files are deliberately small, scoped to an accepted collaboration,
+-- and only stored for the prototype. A production deployment should move the
+-- bytes to object storage with signed URLs and malware scanning.
+CREATE TABLE IF NOT EXISTS tlacuachic_workspace_files (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES tlacuachic_conversations(id) ON DELETE CASCADE,
+  uploader_id UUID NOT NULL REFERENCES tlacuachic_users(id) ON DELETE CASCADE,
+  file_name TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  content BYTEA NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS tlacuachic_conversation_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID NOT NULL REFERENCES tlacuachic_conversations(id) ON DELETE CASCADE,
+  sender_id UUID NOT NULL REFERENCES tlacuachic_users(id) ON DELETE CASCADE,
+  body TEXT NOT NULL CHECK (char_length(body) BETWEEN 1 AND 1200),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS tlacuachic_community_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id UUID NOT NULL REFERENCES tlacuachic_users(id) ON DELETE CASCADE,
+  parent_id UUID REFERENCES tlacuachic_community_posts(id) ON DELETE CASCADE,
+  body TEXT NOT NULL CHECK (char_length(body) BETWEEN 1 AND 1200),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS tlacuachic_business_profiles (

@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { migrate } from "./db.js";
 import { seedIfEmpty } from "./seed.js";
-import { listRoadmapSteps, listMentors, listProviders, upsertProviderForUser, removeProviderForUser } from "./repository.js";
+import { listRoadmapSteps, listMentors, listProviders, getProviderOwner, upsertProviderForUser, removeProviderForUser } from "./repository.js";
 import { rateLimit } from "./ratelimit.js";
 
 await migrate();
@@ -31,6 +31,7 @@ app.get("/", (_req, res) => {
       "GET /api/roadmap-steps",
       "GET /api/mentors",
       "GET /api/providers",
+      "GET /api/internal/providers/:providerId/owner (internal)",
       "PUT /api/providers/:userId (internal, x-internal-key)",
       "DELETE /api/providers/:userId (internal, x-internal-key)",
     ],
@@ -84,6 +85,18 @@ app.put("/api/providers/:userId", requireInternalKey, async (req, res, next) => 
     const profile = req.body;
     if (!profile || typeof profile !== "object") return res.status(400).json({ error: "invalid_request" });
     res.json(await upsertProviderForUser(userId, profile));
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get("/api/internal/providers/:providerId/owner", requireInternalKey, async (req, res, next) => {
+  try {
+    const owner = await getProviderOwner(String(req.params.providerId).slice(0, 80));
+    // A demo account is still a real account with an inbox. It is visibly
+    // labelled in the browser and exists only to test the end-to-end flow.
+    if (!owner || !owner.userId) return res.status(404).json({ error: "provider_not_contactable" });
+    res.json(owner);
   } catch (err) {
     next(err);
   }

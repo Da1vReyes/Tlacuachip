@@ -9,7 +9,21 @@ and real provider signups that actually appear in the marketplace.
 Built for a hackathon — see [AGENTS.md](./AGENTS.md) for the full
 architecture, conventions, and how to run everything.
 
+## Deploy
+
+The project is prepared for a Railway deployment with separate web, market,
+users and catalog services plus one shared PostgreSQL database. Follow the
+exact service order and environment-variable checklist in
+[docs/RAILWAY.md](./docs/RAILWAY.md). For a reproducible local stack, use
+`docker compose up --build` once Docker Desktop is running.
+
 ## Quickstart
+
+For the hackathon demo, start every service from one terminal:
+
+```bash
+npm run dev
+```
 
 Four terminals:
 
@@ -56,6 +70,19 @@ cp server/.env.example server/.env   # then set OPENROUTER_API_KEY
 
 The key stays on the server. The UI tells you whether the AI is configured.
 
+### Demo account
+
+Once the database environment is configured, create a repeatable non-sensitive
+demo account in Postgres:
+
+```bash
+npm run seed:demo
+```
+
+It prints the configured demo credentials. The defaults are documented only in
+`services/user-service/.env.example`; override them in your local `.env` before
+a public deployment.
+
 ## Structure
 
 ```
@@ -67,3 +94,7 @@ tlacuachic/
 │   └── catalog-service/  Roadmap/mentors/providers — real Postgres, wired in, synced from user-service
 └── design/    Source for the click-through concept prototype
 ```
+# Optional but recommended for a stable Mexico heatmap: after downloading the
+# official DENUE CSV archives from INEGI, build a local official snapshot.
+# The source data is ignored by Git and can be regenerated at any time.
+npm run import:denue # CDMX by default; set DENUE_STATE_CODE=14 for Jalisco

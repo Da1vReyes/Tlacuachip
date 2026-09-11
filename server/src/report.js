@@ -34,17 +34,18 @@ function heuristicNumbers(form, localBusinessCount) {
   };
 }
 
-function fallbackInsights(form, localBusinessCount, numbers, osmAvailable) {
+function fallbackInsights(form, localBusinessCount, numbers, marketDataAvailable, marketSource) {
   const label = CATEGORY_LABEL[form.category] ?? "negocio";
+  const sourceLabel = marketSource === "inegi_denue_snapshot" ? "DENUE de INEGI" : "OpenStreetMap";
   const insights = [
-    osmAvailable
-      ? `Hay ${localBusinessCount} negocios de tipo ${label} mapeados en OpenStreetMap cerca de ${form.location.city}; ese número es real y es lo primero que revisan los dueños con experiencia antes de elegir zona.`
-      : `No pudimos consultar OpenStreetMap en este momento, así que no tenemos un conteo real de competencia directa cerca de ${form.location.city}; vale la pena revisarlo caminando la zona o volviendo a generar el reporte más tarde.`,
+    marketDataAvailable
+      ? `Hay ${localBusinessCount} negocios de tipo ${label} registrados cerca de ${form.location.city} en ${sourceLabel}; es una señal real de oferta, no una recomendación de ubicación.`
+      : `No pudimos consultar un directorio georreferenciado en este momento, así que no tenemos un conteo real de competencia directa cerca de ${form.location.city}; vale la pena volver a generar el reporte más tarde.`,
     `Con un presupuesto de $${form.budget.toLocaleString()} MXN, un ingreso mensual de referencia ronda los $${numbers.avgMonthlyRevenue.toLocaleString()} MXN; contadores y asesores comparan esta cifra contra los costos fijos locales, no solo contra la inversión inicial.`,
     `La estimación de supervivencia a 5 años (${numbers.survivalRate5Years}%) baja cuando hay más competencia directa registrada en la zona; conviene contrastarla con la experiencia de quienes ya operan ahí.`,
   ];
   if (form.description) {
-    insights.push("La descripción que compartiste ayuda a matizar esta lectura, aunque este resumen específico se generó sin conexión al modelo de IA.");
+    insights.push("La descripción que compartiste se incluye en esta lectura base; puedes pedir una interpretación con IA cuando el servicio esté disponible.");
   }
   return insights;
 }
@@ -59,13 +60,15 @@ export async function buildReport(form) {
   const { lat, lng, source: geoSource } = await geocodeCity(form.location.city, form.location.state, form.location.country);
 
   let localBusinessCount = 0;
-  let osmAvailable = false;
+  let marketDataAvailable = false;
+  let marketSource = null;
   try {
     const zones = zoneCenters(lat, lng);
     const bbox = boundingBox(zones);
-    const { points } = await fetchRealPoints(bbox, form.category);
+    const { points, source } = await fetchRealPoints(bbox, form.category);
     localBusinessCount = points.length;
-    osmAvailable = true;
+    marketDataAvailable = true;
+    marketSource = source;
   } catch (err) {
     console.warn("[report] Overpass unavailable, continuing without a real count:", err.message);
   }
@@ -76,8 +79,8 @@ export async function buildReport(form) {
     const { model, data } = await chatJson({
       system: [
         "Eres el asistente de Tlacuachic. A partir de datos reales y del propio negocio de la persona, generas una lectura de mercado orientativa para alguien que quiere abrir una microempresa en México.",
-        "Recibes: el conteo de negocios similares mapeados en OpenStreetMap cerca de su ciudad (marcado como disponible o no disponible — si NO está disponible, un conteo de 0 significa que no pudimos consultar los datos, NO que no exista competencia; nunca afirmes 'no hay competencia' o 'es un nicho vacío' en ese caso, dilo explícitamente como dato faltante), su presupuesto, categoría, experiencia y una descripción libre que escribió sobre su idea.",
-        "Con eso, produce una estimación razonada (no inventada al azar) de: crecimiento del sector, ingreso mensual de referencia en MXN, tasa de supervivencia a 5 años, y tendencia de demanda. Cuando el conteo sí esté disponible, úsalo como principal ancla de tu razonamiento sobre competencia.",
+        "Recibes: el conteo de negocios similares en un directorio georreferenciado cerca de su ciudad (marcado como disponible o no disponible — si NO está disponible, un conteo de 0 significa que no pudimos consultar los datos, NO que no exista competencia; nunca afirmes 'no hay competencia' o 'es un nicho vacío' en ese caso, dilo explícitamente como dato faltante), su presupuesto, categoría, experiencia y una descripción libre que escribió sobre su idea.",
+        "Con eso, produce una estimación razonada (no inventada al azar) de: crecimiento del sector, ingreso mensual de referencia en MXN, tasa de supervivencia a 5 años, y tendencia de demanda. Cuando el conteo sí esté disponible, úsalo como principal ancla de tu razonamiento sobre competencia. No afirmes haber buscado en internet ni cites una fuente que no recibiste: la única fuente externa que recibes es el directorio indicado.",
         "Escribe 3 a 4 insights en español, cada uno explicando qué significa un dato y qué suelen revisar profesionales del ramo ante ese dato. Si el usuario escribió una descripción de su negocio, incorpórala explícitamente en al menos un insight.",
         "Tono: informativo, no directivo. Nunca 'debes' ni 'te recomiendo'. Dejas ver el razonamiento, no das órdenes ni garantías. Aclara que crecimiento, ingreso y supervivencia son estimaciones, no cifras oficiales.",
         "Responde SOLO con JSON válido con esta forma exacta:",
@@ -94,9 +97,9 @@ export async function buildReport(form) {
         ubicacion: form.location,
         datosReales: {
           negociosSimilaresCercanos: localBusinessCount,
-          conteoDisponible: osmAvailable,
-          fuente: "OpenStreetMap",
-          nota: osmAvailable
+          conteoDisponible: marketDataAvailable,
+          fuente: marketSource === "inegi_denue_snapshot" ? "DENUE de INEGI" : "OpenStreetMap",
+          nota: marketDataAvailable
             ? "Este conteo es real y está confirmado."
             : "No se pudo consultar OpenStreetMap en este momento. El conteo es 0 solo porque falta el dato, no porque se haya confirmado ausencia de competencia.",
         },
@@ -122,7 +125,8 @@ export async function buildReport(form) {
       source: "llm",
       model,
       localBusinessCount,
-      osmAvailable,
+      osmAvailable: marketDataAvailable,
+      marketSource,
       sectorGrowthPercent: clamp(sectorGrowthPercent, -30, 60),
       sectorGrowthPeriod: typeof data.sectorGrowthPeriod === "string" ? data.sectorGrowthPeriod.slice(0, 40) : heuristics.sectorGrowthPeriod,
       avgMonthlyRevenue: Math.round(clamp(avgMonthlyRevenue, 0, form.budget * 6 + 50000)),
@@ -137,9 +141,10 @@ export async function buildReport(form) {
       source: "fallback",
       model: null,
       localBusinessCount,
-      osmAvailable,
+      osmAvailable: marketDataAvailable,
+      marketSource,
       ...heuristics,
-      insights: fallbackInsights(form, localBusinessCount, heuristics, osmAvailable),
+      insights: fallbackInsights(form, localBusinessCount, heuristics, marketDataAvailable, marketSource),
     };
   }
 }
