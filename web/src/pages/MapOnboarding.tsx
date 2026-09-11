@@ -116,7 +116,7 @@ export default function MapOnboarding() {
   if (stage === "country") {
     return (
       <div className="map-onboarding">
-        <header className="onboarding-header"><div className="onboarding-brand">Tlacuachip</div><span>Decisión de zona · 1 de 2</span></header>
+        <header className="onboarding-header"><div className="onboarding-brand">Tlacuachic</div><span>Decisión de zona · 1 de 2</span></header>
         <CountryPreview country={businessForm.location.country} city={businessForm.location.city} cityCenter={center} onComplete={() => setStage("analysis")} />
       </div>
     );
@@ -133,7 +133,7 @@ export default function MapOnboarding() {
   return (
     <div className="map-onboarding">
       <header className="onboarding-header">
-        <div className="onboarding-brand">Tlacuachip</div>
+        <div className="onboarding-brand">Tlacuachic</div>
         <span>Decisión de zona · 2 de 2</span>
       </header>
 

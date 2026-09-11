@@ -32,7 +32,7 @@ function rowToStep(row) {
 
 app.get("/", (_req, res) => {
   res.json({
-    name: "tlacuachip-catalog-service",
+    name: "tlacuachic-catalog-service",
     owns: ["roadmap_steps", "mentors", "providers"],
     endpoints: ["GET /api/roadmap-steps", "GET /api/mentors", "GET /api/providers"],
   });
@@ -54,5 +54,5 @@ app.get("/api/providers", (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`tlacuachip-catalog-service listening on http://localhost:${PORT}`);
+  console.log(`tlacuachic-catalog-service listening on http://localhost:${PORT}`);
 });

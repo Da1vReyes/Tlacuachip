@@ -6,7 +6,7 @@ holding to so the codebase stays coherent as more people touch it.
 
 ## What this is
 
-Tlacuachip: a web app that helps someone in Mexico/LatAm with an idea and a
+Tlacuachic: a web app that helps someone in Mexico/LatAm with an idea and a
 budget (from $50 to $500,000 MXN) turn it into a real business. Flow:
 
 1. **Landing → sign up/login** (`web/src/pages/Landing.tsx`, `Auth.tsx`)
@@ -44,7 +44,7 @@ never as a generic ad.
 ## Repo layout
 
 ```
-tlacuachip/
+tlacuachic/
 ├── web/                  React 19 + TypeScript + Vite
 │   ├── src/pages/         One file per screen/route
 │   ├── src/components/    AppShell (sidebar/topbar), icons.tsx (inline SVG set)

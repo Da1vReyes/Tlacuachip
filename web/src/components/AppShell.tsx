@@ -59,7 +59,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const navItems = isProvider ? providerNav : entrepreneurNav;
   const isStepDetail = location.pathname.startsWith("/paso/");
   const showBack = isStepDetail || location.pathname === "/proveedor/nuevo";
-  const title = isStepDetail ? "Detalle del paso" : titles[location.pathname] ?? "Tlacuachip";
+  const title = isStepDetail ? "Detalle del paso" : titles[location.pathname] ?? "Tlacuachic";
   const xpPct = Math.min(100, Math.round(((progress.xp % 400) / 400) * 100));
 
   return (
@@ -69,7 +69,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <div className="sidebar-logo-mark">
             <IconLeaf size={17} />
           </div>
-          <span className="sidebar-logo-text">Tlacuachip</span>
+          <span className="sidebar-logo-text">Tlacuachic</span>
         </div>
         <nav className="sidebar-nav">
           {navItems.map((item, i) =>

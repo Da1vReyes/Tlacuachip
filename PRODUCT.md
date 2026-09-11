@@ -12,7 +12,7 @@ Dos roles, elegidos al crear la cuenta. (1) Emprendedores que quieren abrir una 
 
 ## Product Purpose
 
-Tlacuachip ayuda a transformar una idea de negocio en una decisión informada: entiende el mercado local, compara zonas y acompaña los siguientes pasos de apertura.
+Tlacuachic ayuda a transformar una idea de negocio en una decisión informada: entiende el mercado local, compara zonas y acompaña los siguientes pasos de apertura.
 
 ## Positioning
 
@@ -35,7 +35,7 @@ Flujo principal: crear cuenta, describir el negocio, decidir qué datos puede ve
 
 ## Brand Commitments
 
-Nombre: Tlacuachip. Voz directa, práctica y sin prometer resultados financieros. El usuario es dueño de sus datos y controla qué comparte con la red.
+Nombre: Tlacuachic. Voz directa, práctica y sin prometer resultados financieros. El usuario es dueño de sus datos y controla qué comparte con la red.
 
 ## Evidence on Hand
 

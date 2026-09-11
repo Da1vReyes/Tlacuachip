@@ -29,7 +29,7 @@ const aiLimiter = rateLimit(Number(process.env.AI_RATE_LIMIT_PER_MINUTE || 20));
 
 app.get("/", (_req, res) => {
   res.json({
-    name: "tlacuachip-server",
+    name: "tlacuachic-server",
     endpoints: ["/api/health", "/api/ai/status", "/api/density?lat=&lng=&category=", "POST /api/match", "POST /api/insights"],
   });
 });
@@ -99,10 +99,11 @@ app.post("/api/match", aiLimiter, async (req, res) => {
   try {
     const { model, data } = await chatJson({
       system: [
-        "Eres el asistente de Tlacuachip, una plataforma que ayuda a microemprendedores en México a formalizar su negocio.",
+        "Eres el asistente de Tlacuachic, una plataforma que da información a microemprendedores en México sobre cómo formalizar su negocio.",
         "Recibes el perfil mínimo de un emprendedor y una lista de proveedores candidatos (abogados, contadores, asesores, marketing, gestoría, insumos).",
-        "Elige entre 3 y 6 candidatos y explica en una frase concreta (máximo 140 caracteres, español, tono directo) por qué cada uno le sirve, priorizando su siguiente paso pendiente.",
-        "Nunca inventes proveedores: usa únicamente los `id` de la lista. Nunca prometas resultados ni des asesoría legal o fiscal.",
+        "Selecciona hasta 6 candidatos de la lista, priorizando los más relevantes para el paso pendiente del emprendedor; si la lista tiene pocos candidatos relevantes, inclúyelos a todos aunque sean menos de 3. Para cada uno escribe una frase (máximo 140 caracteres, español) que informe qué suele resolver ese tipo de profesional en ese paso, como lo explicaría un profesional del ramo.",
+        "Tono: informativo, no directivo. Describe prácticas reales ('un contador normalmente revisa…'), no órdenes ('debes…', 'contrata a…'). La decisión es del emprendedor.",
+        "Nunca inventes proveedores: usa únicamente los `id` de la lista. Nunca prometas resultados ni des asesoría legal o fiscal específica.",
         "Responde SOLO con JSON válido con esta forma exacta:",
         '{"summary": "una frase en español", "recommendations": [{"providerId": "id", "reason": "texto", "forStepId": "id de paso o null"}]}',
       ].join(" "),
@@ -152,8 +153,9 @@ app.post("/api/insights", aiLimiter, async (req, res) => {
   try {
     const { model, data } = await chatJson({
       system: [
-        "Eres el asistente de Tlacuachip. Interpretas indicadores de mercado para una persona que quiere abrir una microempresa en México y no tiene formación financiera.",
-        "Escribe entre 3 y 4 frases cortas en español, cada una un insight accionable sobre los números recibidos. Aclara cuando un dato es estimación.",
+        "Eres el asistente de Tlacuachic. Explicas indicadores de mercado a una persona que quiere abrir una microempresa en México y no tiene formación financiera.",
+        "Escribe entre 3 y 4 frases cortas en español. Cada una informa qué significa un número y qué suelen revisar los profesionales (contadores, asesores, dueños con experiencia) ante ese dato. Aclara cuando un dato es estimación.",
+        "Tono: informativo, no directivo. Nada de 'debes', 'te recomiendo' ni 'haz'. Presenta contexto y prácticas comunes; la decisión es de la persona.",
         "No prometas resultados, no des asesoría legal ni fiscal, no inventes cifras que no estén en los datos.",
         'Responde SOLO con JSON válido: {"insights": ["frase 1", "frase 2", "frase 3"]}',
       ].join(" "),
@@ -186,6 +188,6 @@ app.use((err, _req, res, _next) => {
 
 app.listen(PORT, () => {
   const { configured, model } = llmStatus();
-  console.log(`tlacuachip-server listening on http://localhost:${PORT}`);
+  console.log(`tlacuachic-server listening on http://localhost:${PORT}`);
   console.log(configured ? `[ai] OpenRouter configured (model: ${model})` : "[ai] OPENROUTER_API_KEY not set — /api/match and /api/insights use local fallbacks");
 });

@@ -24,7 +24,7 @@ export default function StepDetail() {
   const confirmedEvidence = evidenceByStep[step.id] ?? [];
   const evidenceComplete = step.detail.evidence.every((item) => confirmedEvidence.includes(item));
   const shareUrl = `${window.location.origin}/#/roadmap`;
-  const shareText = `Completé “${step.title}” en mi ruta de formalización de Tlacuachip. Sigo construyendo mi negocio paso a paso.`;
+  const shareText = `Completé “${step.title}” en mi ruta de formalización de Tlacuachic. Sigo construyendo mi negocio paso a paso.`;
   const statusLabel = step.detail.applicability === "base" ? "Paso base" : step.detail.applicability === "conditional" ? "Según tu giro" : "Recomendado al crecer";
   const stepProviders = providers
     .filter((p) => p.helpsWith.includes(step.id))
@@ -98,7 +98,7 @@ export default function StepDetail() {
 
       <div className="card stack" style={{ gap: 10 }}>
         <h2>Antes de marcar este paso</h2>
-        <p className="muted" style={{ fontSize: 13 }}>Confirma lo que ya tienes documentado. Tlacuachip registra tu avance; no emite permisos ni reemplaza una validación oficial.</p>
+        <p className="muted" style={{ fontSize: 13 }}>Confirma lo que ya tienes documentado. Tlacuachic registra tu avance; no emite permisos ni reemplaza una validación oficial.</p>
         <div className="stack" style={{ gap: 8 }}>
           {step.detail.evidence.map((item) => {
             const checked = confirmedEvidence.includes(item);

@@ -70,7 +70,7 @@ export default function ProviderDashboard() {
       </div>
 
       <div className="card stack" style={{ gap: 8 }}>
-        <h2>Cómo se sostiene Tlacuachip</h2>
+        <h2>Cómo se sostiene Tlacuachic</h2>
         <p className="muted" style={{ fontSize: 13 }}>Durante el prototipo no hay suscripción ni comisión. Cuando existan, serán las únicas dos fuentes de ingreso: una suscripción para proveedores por aparecer en la red y una comisión por acuerdo cerrado dentro de la plataforma. Los datos de los usuarios nunca se venden ni se usan para publicidad.</p>
       </div>
     </div>

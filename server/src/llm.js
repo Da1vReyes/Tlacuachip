@@ -2,7 +2,11 @@
 // Everything sent to the model goes through privacy.js first.
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "openai/gpt-4o-mini";
+// deepseek-chat-v3.1 (not the "-flash" reasoning variant): consistently
+// ~2s and a fraction of a cent per call in testing, which is what these
+// routes need — deepseek-v4-flash defaults to a chain-of-thought pass that
+// occasionally pushed latency past 20s even with reasoning disabled.
+const DEFAULT_MODEL = "deepseek/deepseek-chat-v3.1";
 const TIMEOUT_MS = 25000;
 
 export function llmStatus() {
@@ -31,11 +35,17 @@ export async function chatJson({ system, user, temperature = 0.3 }) {
         Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": process.env.OPENROUTER_REFERER || "http://localhost",
-        "X-Title": "Tlacuachip",
+        "X-Title": "Tlacuachic",
       },
       body: JSON.stringify({
         model,
         temperature,
+        // These routes need fast, cheap classification/summarization, not
+        // deep reasoning. Reasoning-capable models (e.g. deepseek-v4-flash)
+        // default to a chain-of-thought pass that adds several seconds and
+        // most of the token cost — disabling it keeps responses instant and
+        // ~10x cheaper, with no quality loss for this task.
+        reasoning: { enabled: false },
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },
