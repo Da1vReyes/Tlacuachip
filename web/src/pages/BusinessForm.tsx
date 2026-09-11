@@ -113,11 +113,13 @@ export default function BusinessForm() {
       <div className="wizard-body">
         <div key={step} className="wizard-step stack" style={{ gap: 24 }}>
           {step === 0 && (
-            <div className="stack" style={{ gap: 18 }}>
+            <div className="stack wizard-start" style={{ gap: 18 }}>
               <span className="pill">Paso 1 de {TOTAL_STEPS}</span>
-              <h1 className="wizard-question">¿Qué negocio quieres emprender?</h1>
-              <p>Descríbelo en pocas palabras, como si se lo contaras a un amigo.</p>
+              <h1 className="wizard-question">Empecemos por tu idea.</h1>
+              <p className="wizard-intro">No necesitas conocer todos los requisitos hoy. Cuéntanos qué quieres construir y después ordenaremos lo que vale la pena mirar: zona, presupuesto, trámites y apoyo.</p>
+              <label className="wizard-field-label" htmlFor="business-idea">Tu idea de negocio</label>
               <input
+                id="business-idea"
                 autoFocus
                 className="wizard-amount"
                 style={{
@@ -136,6 +138,7 @@ export default function BusinessForm() {
                 onChange={(e) => setBusinessType(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && goNext()}
               />
+              <p className="wizard-next">Después: categoría, presupuesto, ciudad y experiencia.</p>
             </div>
           )}
 
