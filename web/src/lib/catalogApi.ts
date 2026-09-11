@@ -1,6 +1,6 @@
 import type { Mentor, Provider, RoadmapStep } from "../types";
 
-export const CATALOG_API_BASE = import.meta.env.VITE_CATALOG_SERVICE_URL ?? "http://localhost:4200";
+export const CATALOG_API_BASE = import.meta.env.VITE_CATALOG_SERVICE_URL ?? (import.meta.env.PROD ? "" : "http://localhost:4200");
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${CATALOG_API_BASE}${path}`);

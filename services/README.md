@@ -29,7 +29,7 @@ ever need an admin-style "look up another user" endpoint, it needs its own
 explicit authorization check — never just relax the `/api/me` pattern.
 
 ```bash
-cp .env.example .env   # set DATABASE_URL (any Postgres) and JWT_SECRET
+cp e.env.example e.env   # set DATABASE_URL (any Postgres) and JWT_SECRET
 npm install
 npm run dev             # :4100, runs schema.sql (CREATE TABLE IF NOT EXISTS) on boot
 ```
@@ -85,7 +85,7 @@ disappears from the public roster too. Both calls are fire-and-forget on
 own save still succeeds, it just doesn't propagate until the next save.
 
 ```bash
-cp .env.example .env   # set DATABASE_URL and INTERNAL_API_KEY (must match user-service's CATALOG_INTERNAL_API_KEY)
+cp e.env.example e.env   # set DATABASE_URL and INTERNAL_API_KEY (must match user-service's CATALOG_INTERNAL_API_KEY)
 npm install
 npm run dev             # :4200, runs schema.sql then seeds if empty
 ```
