@@ -7,21 +7,50 @@ import type { UserRole } from "../types";
 export default function Auth() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const { login, businessForm, providerProfile, preferences, savePreferences, user } = useApp();
+  const { signup, login, preferences, savePreferences, user } = useApp();
   const [mode, setMode] = useState<"login" | "signup">("signup");
   const [role, setRole] = useState<UserRole>(params.get("role") === "provider" ? "provider" : user?.role ?? "entrepreneur");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    login(email, name || undefined, role);
-    if (role === "provider") {
-      navigate(providerProfile ? "/proveedor/panel" : "/proveedor/nuevo");
-      return;
+    if (!email || !password) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      let result;
+      if (mode === "signup") {
+        if (password.length < 8) {
+          setError("La contraseña debe tener al menos 8 caracteres.");
+          setSubmitting(false);
+          return;
+        }
+        result = await signup(email, password, name || undefined, role);
+      } else {
+        result = await login(email, password);
+      }
+      if (result.role === "provider") {
+        navigate(result.hasProviderProfile ? "/proveedor/panel" : "/proveedor/nuevo");
+        return;
+      }
+      navigate(result.hasBusinessForm ? (result.onboardingComplete ? "/dashboard" : "/onboarding/mapa") : "/formulario");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? mode === "signup"
+            ? err.message.includes("email_taken") || err.message.toLowerCase().includes("exists")
+              ? "Ya existe una cuenta con este correo. Intenta iniciar sesión."
+              : err.message
+            : err.message
+          : "Algo salió mal"
+      );
+    } finally {
+      setSubmitting(false);
     }
-    navigate(businessForm ? (preferences.onboardingComplete ? "/dashboard" : "/onboarding/mapa") : "/formulario");
   };
 
   return (
@@ -84,15 +113,26 @@ export default function Auth() {
 
           <div className="field">
             <label htmlFor="password">Contraseña</label>
-            <input id="password" type="password" required placeholder="••••••••" />
+            <input
+              id="password"
+              type="password"
+              required
+              minLength={mode === "signup" ? 8 : undefined}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {mode === "signup" && <span className="muted" style={{ fontSize: 11.5 }}>Mínimo 8 caracteres.</span>}
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ marginTop: 8 }}>
-            {mode === "signup" ? "Crear cuenta" : "Iniciar sesión"}
+          {error && <span className="muted" style={{ color: "var(--warn)", fontSize: 12.5 }}>{error}</span>}
+
+          <button type="submit" className="btn btn-primary" style={{ marginTop: 8 }} disabled={submitting}>
+            {submitting ? "Un momento…" : mode === "signup" ? "Crear cuenta" : "Iniciar sesión"}
           </button>
         </form>
 
-        <button className="btn btn-ghost" onClick={() => setMode(mode === "signup" ? "login" : "signup")}>
+        <button className="btn btn-ghost" onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setError(null); }}>
           {mode === "signup" ? "¿Ya tienes cuenta? Inicia sesión" : "¿Nuevo aquí? Crea una cuenta"}
         </button>
       </div>

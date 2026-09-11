@@ -24,11 +24,12 @@ Flujo principal: crear cuenta, describir el negocio, decidir qué datos puede ve
 
 ## Capabilities and Constraints
 
-- Frontend React + TypeScript + Vite; API Express en `server/`.
+- Frontend React + TypeScript + Vite; APIs Express en `server/` (Overpass + IA) y `services/user-service` (cuentas y datos del usuario).
+- Cuentas reales: correo/contraseña con bcrypt, sesión por token (JWT), base de datos Postgres real. Cada endpoint del usuario opera solo sobre la cuenta del token que llama, nunca sobre un id que mande el cliente — corrige un IDOR real que existía en una versión anterior de este servicio (nunca llegó a estar conectado al frontend).
 - Oferta/competencia: puntos de interés de OpenStreetMap consultados por Overpass; el conteo real alimenta tanto el mapa de calor como el reporte de mercado (`POST /api/report`).
 - El reporte de mercado (crecimiento, ingreso, supervivencia, insights) lo razona la IA a partir de ese conteo real, el presupuesto y la descripción libre que el usuario escribe sobre su negocio — no son números fijos. Si el servidor está disponible pero Overpass o la IA no responden, cae a una estimación local que lo declara así.
 - Demanda y costos del mapa de calor: siguen siendo estimaciones del prototipo; deben presentarse como tales.
-- Datos del perfil se persisten localmente en esta versión; el usuario puede editar visibilidad y eliminar su registro desde Configuración.
+- Datos del perfil (negocio, reporte, progreso, preferencias, perfil de proveedor, equipo guardado) se persisten en Postgres, ligados a la cuenta — no solo al navegador. Iniciar sesión desde otro dispositivo trae los mismos datos. El usuario puede editar visibilidad y eliminar su cuenta (borrado real en el servidor) desde Configuración.
 - Matching de equipo y lectura de indicadores con IA vía OpenRouter (`server/`); la IA recibe solo el perfil minimizado según la visibilidad elegida, el usuario puede ver ese payload exacto antes de enviarlo, y sin clave configurada todo cae a un ranking local declarado como tal.
 - Modelo de ingresos declarado en la landing: suscripción de proveedores y comisión por acuerdos cerrados; nunca venta de datos. Ninguno está implementado todavía.
 - Inferido del brief: el onboarding debe llegar a la decisión de zona antes de abrir el dashboard.

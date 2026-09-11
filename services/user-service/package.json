@@ -1,16 +1,18 @@
 {
   "name": "tlacuachic-user-service",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
-  "description": "Owns users, business profiles, and roadmap progress. Independent SQLite database — no other service reads or writes it directly.",
+  "description": "Owns users, business profiles, reports, progress, preferences, provider profiles and saved teams. Real Postgres persistence, JWT auth — every /api/me/* route acts on the caller's own account only, never on a client-supplied id.",
   "scripts": {
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "dev": "node --watch --env-file-if-exists=.env src/index.js",
+    "start": "node --env-file-if-exists=.env src/index.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.9.1",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0"
   }
 }

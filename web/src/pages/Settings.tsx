@@ -12,7 +12,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { preferences, savePreferences, deleteAllData } = useApp();
   const removeEverything = () => {
-    if (window.confirm("¿Eliminar tu perfil, negocio, progreso y preferencias de este dispositivo? Esta acción no se puede deshacer.")) {
+    if (window.confirm("¿Eliminar tu cuenta y todos tus datos (perfil, negocio, progreso, preferencias) de nuestros servidores? Esta acción no se puede deshacer.")) {
       deleteAllData();
       navigate("/", { replace: true });
     }

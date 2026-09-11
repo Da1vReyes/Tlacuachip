@@ -67,10 +67,15 @@ tlacuachic/
 │       ├── overpass.js    Overpass (OpenStreetMap) client
 │       ├── zones.js       3x3 zone-grid math, shared conceptually with web
 │       └── categories.js  Business category → OSM tag mapping
-├── services/              Real persistence layer, built in parallel —
-│                          NOT wired to the app yet. See services/README.md.
-│   ├── user-service/       Users, business profiles, roadmap progress. Own SQLite DB.
-│   └── catalog-service/    Roadmap steps, mentors, suppliers. Own SQLite DB, seeded.
+├── services/
+│   ├── user-service/       WIRED IN. Users, business profiles, reports,
+│   │                       progress, preferences, provider profiles, saved
+│   │                       teams. Real Postgres (see .env.example), JWT
+│   │                       auth, every route scoped to the caller's own
+│   │                       account (`/api/me/*`, never a client-sent id).
+│   └── catalog-service/    NOT wired to anything. Roadmap steps, mentors,
+│                           suppliers. Still SQLite, still the old schema —
+│                           see "Known gaps".
 └── design/                Source `.dc.html` for the click-through concept
                             prototype (Claude Design canvas) — not part of
                             the shipped app, keep for pitching/iterating.
@@ -85,17 +90,27 @@ hackathon (see Known gaps below).
 
 ## Running it
 
-Two processes, no Docker, no build step for the API:
+Three processes, no Docker, no build step for either API:
 
 ```bash
-cd server && npm install && npm run dev   # http://localhost:4000
-cd web && npm install && npm run dev      # http://localhost:5173 (Vite picks a free port)
+cd server && npm install && npm run dev                      # http://localhost:4000
+cd services/user-service && npm install && npm run dev       # http://localhost:4100 — needs DATABASE_URL + JWT_SECRET, see below
+cd web && npm install && npm run dev                         # http://localhost:5173 (Vite picks a free port)
 ```
 
-`web` talks to the API via `VITE_API_URL` (see `web/.env.example`), default
-`http://localhost:4000`. The app degrades gracefully if the API is down —
-the heatmap falls back to estimated (mock) supply numbers instead of real
-OpenStreetMap counts, and the AI features fall back to local rankings.
+`web` talks to `server` via `VITE_API_URL` (default `http://localhost:4000`)
+and to `user-service` via `VITE_USER_SERVICE_URL` (default
+`http://localhost:4100`) — see `web/.env.example`. The app degrades
+gracefully if `server` is down — the heatmap falls back to estimated
+(mock) supply numbers, the AI features fall back to local rankings — but
+**`user-service` is not optional**: without it, signup/login fail outright
+(there's no local-only account mode anymore). Copy
+`services/user-service/.env.example` to `.env` and set `DATABASE_URL`
+(any Postgres — Render/Supabase/Neon/RDS all work; the service runs
+`CREATE TABLE IF NOT EXISTS` on boot, tables are prefixed `tlacuachic_` so
+it's safe to point at a database with other projects' tables already in
+it) and `JWT_SECRET` (generate one — see the file's own comment for the
+one-liner).
 
 **AI (OpenRouter).** Copy `server/.env.example` to `server/.env` and set
 `OPENROUTER_API_KEY` (optionally `OPENROUTER_MODEL`, default
@@ -118,11 +133,35 @@ There's no test suite yet (hackathon timeline). If you add non-trivial logic
 ## State & data flow
 
 - **`AppContext`** (`web/src/context/AppContext.tsx`) is the only client
-  state: `user`, `businessForm`, `report`, `progress` (level/XP/completed
-  steps), all persisted to `localStorage` under one JSON key. Read/write it
-  through `useApp()` — don't reach into `localStorage` directly from a page.
-  `preferences` owns profile visibility, location precision, selected zone
+  state: `user`, `businessForm`, `report`, `progress`, `preferences`,
+  `providerProfile`, `team`. Read/write it through `useApp()` — don't reach
+  into `localStorage` or call `services/user-service` directly from a page.
+  Every mutator (`saveBusinessForm`, `completeStep`, `savePreferences`, …)
+  updates this state immediately (optimistic — the UI never waits on a
+  round-trip) and mirrors the change to `user-service` in the background
+  when authenticated; a background failure is logged (`console.warn`), not
+  surfaced, so a flaky connection doesn't break the UI — it just means that
+  one change won't show up if you log in elsewhere until it's retried.
+  `localStorage` (`emprende-mvp-state` for state, `tlacuachic-token` for the
+  session) is now a **cache for instant paint**, not the source of truth:
+  on mount, if a token is present, `AppContext` refetches `GET /api/me` and
+  overwrites local state with whatever Postgres says — that's what makes
+  logging in from a different browser show your real data instead of an
+  empty account. `preferences` owns profile visibility, location precision
   and the mandatory map-onboarding completion state.
+- **Auth is real** (`services/user-service`): email/password with bcrypt,
+  JWT bearer tokens (`services/user-service/src/auth.js`), Postgres-backed.
+  `web/src/lib/userApi.ts` is the only file allowed to call it directly —
+  go through `useApp()`'s `signup`/`login`/`logout` from a page. `signup`
+  and `login` resolve with an `AuthResult` snapshot (`role`,
+  `hasBusinessForm`, `hasProviderProfile`, `onboardingComplete`) computed
+  from the just-fetched server response — **use that to decide where to
+  navigate, not context state read right after calling them.** We hit this
+  exact stale-closure bug once already: `navigate()` ran with the
+  pre-update `businessForm` still in scope (React hadn't re-rendered yet)
+  and sent a returning user with a saved business back to the wizard. See
+  "No stale closures" below — same root cause as the `BusinessForm.tsx` one,
+  different screen.
 - **The market report is generated, not mock**, since `POST /api/report`
   (`server/src/report.js`) landed: it geocodes the business's city, counts
   REAL nearby similar businesses via Overpass, and asks the model to reason
@@ -248,20 +287,33 @@ file unless you have a concrete reason; they're flagged, not broken.
   formal-sector counts and sector growth by municipality, which would
   upgrade `server/src/report.js`'s heuristic beyond "real count + AI
   reasoning" to "real count + real published growth stats + AI reasoning."
-- **No auth backend** — "login" just stores a name/email in `localStorage`.
-  `services/user-service` now persists users/profiles/progress for real
-  (SQLite), but the web app doesn't call it yet — see `services/README.md`
-  for the cutover plan. Still no passwords/sessions, just email-as-identity.
+- **No token revocation.** JWTs are valid for 30 days from issue with no
+  server-side session to invalidate — "logout" only clears the token
+  client-side; a captured token keeps working until it expires. Fine for a
+  hackathon; a real deployment needs a revocation list or short-lived
+  access tokens + refresh tokens.
+- **No email verification, no rate limit on login beyond the generic
+  20/min/IP** (`services/user-service/src/index.js → authLimiter`) — no
+  account lockout, no CAPTCHA. Someone can brute-force a weak password
+  slowly. Fine for a hackathon demo, not for real user data.
+- **`catalog-service` still runs on SQLite and old schema/step ids**
+  (mentors, providers, roadmap steps) and isn't wired to anything — the
+  provider roster shown in the app is still `web/src/data/mockData.ts`
+  seed data (see below). `user-service` is the one that moved to Postgres.
 - **No tests.** Priority if this continues: the scoring math
   (`opportunityFrom` in `Heatmap.tsx`, `scoreFromCount` in
   `server/src/zones.js`) and the zone-bucketing geometry, since those are
   easy to silently break.
 - **Zone grid is duplicated** across `web` and `server` (see Repo layout) —
   extract to a shared package if this grows past hackathon scope.
-- `server` has no persistence or auth — it's a stateless proxy in front of
-  Overpass (10 min in-memory cache) plus two LLM routes behind a per-IP
-  rate limit (`AI_RATE_LIMIT_PER_MINUTE`, default 20). Fine for a demo; add
-  a shared store before running more than one process.
+- `server` (the Overpass/AI one, not `user-service`) has no persistence or
+  auth by design — it's a stateless proxy plus two LLM routes behind a
+  per-IP rate limit (`AI_RATE_LIMIT_PER_MINUTE`, default 20). One gap:
+  `GET /api/density` has no rate limit at all (the LLM routes do) — varying
+  lat/lng slightly bypasses the 10-min cache, so it's the one endpoint that
+  could burn through Overpass's shared quota if hammered. Add `aiLimiter`
+  (or a separate, larger-quota limiter) to it before this goes anywhere
+  public.
 - **The provider roster is seed data** (`web/src/data/mockData.ts →
   providers`). A real provider signing up today only persists locally
   (`providerProfile` in `AppContext`) and isn't added to the roster other

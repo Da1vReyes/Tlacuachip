@@ -1,17 +1,26 @@
-import Database from "better-sqlite3";
+import pg from "pg";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { mkdirSync } from "node:fs";
 
+const { Pool } = pg;
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dataDir = join(__dirname, "..", "data");
-mkdirSync(dataDir, { recursive: true });
 
-const dbPath = process.env.DB_PATH ?? join(dataDir, "user-service.db");
-export const db = new Database(dbPath);
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is required — copy .env.example to .env and set it.");
+}
 
-const schema = readFileSync(join(__dirname, "schema.sql"), "utf-8");
-db.exec(schema);
+// Render (and most managed Postgres) terminate TLS with a cert that isn't
+// in Node's default trust store for this kind of ad-hoc connection;
+// rejectUnauthorized:false keeps the connection encrypted but skips CA
+// verification. Fine for a hackathon DB, not for a cert you actually
+// need to trust — revisit if this ever holds real user data at scale.
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+
+export async function migrate() {
+  const schema = readFileSync(join(__dirname, "schema.sql"), "utf-8");
+  await pool.query(schema);
+}
