@@ -73,10 +73,10 @@ ALLOWED_ORIGINS=https://<dominio-web-que-crearas>.up.railway.app
 Genera y guarda su dominio público. Si no agregas `OPENROUTER_API_KEY`, la app
 continúa con sus fallbacks, pero el reporte no tendrá interpretación con IA.
 
-> El snapshot grande de DENUE se mantiene fuera de Git para no subir 22 MB de
-> datos derivados. El servicio sigue funcionando con el fallback de mapa. Para
-> el demo de datos oficiales, publica el snapshot en almacenamiento privado o
-> reduce el piloto a un extracto permitido y versionado con fecha/fuente.
+> El repositorio incluye un extracto piloto, versionado y atribuido, de
+> cafeterías de CDMX proveniente de DENUE. Así la oferta del demo no depende de
+> Overpass. El import completo de 22 MB se mantiene fuera de Git; vuelve a
+> generarlo con `npm run import:denue` cuando actualices la fuente oficial.
 
 ### 5. Servicio `web`
 
@@ -107,6 +107,22 @@ https://<web>/
 
 Cada health check debe devolver `{"ok":true}`. Después prueba registro,
 privacidad, conversación, invitación, colaboración, CSV y completar tarea.
+
+## Cargar la demo para el jurado
+
+Una base nueva empieza correctamente vacía. Después de que `catalog` y `users`
+estén sanos, abre la Shell del servicio `users` en Railway y ejecuta una sola
+vez:
+
+```bash
+npm run seed:showcase
+```
+
+Esto crea **cuentas y datos señalados como demo**, nunca proveedores reales:
+un emprendedor, el contador Mateo Cruz, una colaboración ya aceptada, el plan
+fiscal y un CSV. Sirve para mostrar el flujo entero con una sola sesión de
+demo. Las credenciales toman `DEMO_ACCOUNT_EMAIL` y `DEMO_ACCOUNT_PASSWORD` de
+las variables de Railway; define ambos con valores de demo no sensibles.
 
 ## Desarrollo reproducible
 

@@ -7,6 +7,8 @@
     "build": "npm --prefix web run build",
     "seed:demo": "npm --prefix services/user-service run seed:demo",
     "seed:test-network": "npm --prefix services/user-service run seed:test-network",
+    "seed:showcase": "npm --prefix services/user-service run seed:showcase",
+    "build:denue-pilot": "node scripts/build-denue-pilot.mjs",
     "import:denue": "node scripts/import-denue.mjs",
     "test": "npm --prefix server test"
   }

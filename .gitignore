@@ -24,7 +24,9 @@ npm-debug.log*
 # Local tooling caches
 .impeccable/
 
-# Official DENUE source snapshots are generated locally from INEGI's large
-# public downloads. Keep raw/source-derived data out of Git; regenerate with
-# `npm run import:denue` when the official release changes.
-server/data/
+# The full official DENUE import is generated locally and stays out of Git.
+# The compact CDMX cafetería pilot extract is public, source-attributed data
+# committed specifically so the hosted hackathon demo is not dependent on an
+# external Overpass request.
+server/data/*
+!server/data/denue-pilot.json
