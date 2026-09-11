@@ -1,0 +1,72 @@
+services:
+  - type: web
+    name: tlacuachic-market
+    runtime: node
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: deepseek/deepseek-chat-v3.1
+      - key: OPENROUTER_REFERER
+        sync: false
+      - key: AI_RATE_LIMIT_PER_MINUTE
+        value: "20"
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+  - type: web
+    name: tlacuachic-users
+    runtime: node
+    rootDir: services/user-service
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CATALOG_INTERNAL_API_KEY
+        sync: false
+      - key: CATALOG_SERVICE_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: DEMO_ACCOUNT_EMAIL
+        value: demo@tlacuachic.local
+      - key: DEMO_ACCOUNT_PASSWORD
+        sync: false
+
+  - type: web
+    name: tlacuachic-catalog
+    runtime: node
+    rootDir: services/catalog-service
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: INTERNAL_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+  - type: web
+    name: tlacuachic-web
+    runtime: node
+    rootDir: web
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start -- --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_USER_SERVICE_URL
+        sync: false
+      - key: VITE_CATALOG_SERVICE_URL
+        sync: false
