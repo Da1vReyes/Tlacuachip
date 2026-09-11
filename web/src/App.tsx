@@ -17,6 +17,7 @@ import Team from "./pages/Team";
 import Community from "./pages/Community";
 import MapOnboarding from "./pages/MapOnboarding";
 import Settings from "./pages/Settings";
+import Tutorial from "./pages/Tutorial";
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/proveedor/panel" element={<ProviderDashboard />} />
             <Route path="/comunidad" element={<Community />} />
             <Route path="/configuracion" element={<Settings />} />
+            <Route path="/tutorial" element={<Tutorial />} />
           </Routes>
         </AppShell>
       </HashRouter>

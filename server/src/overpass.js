@@ -25,17 +25,9 @@ function buildQuery(bbox, tags) {
  * places behind a supply reading, not only an aggregated score.
  * or throws so the caller can fall back to an estimate.
  */
-export async function fetchRealPoints(bbox, category) {
-  const key = cacheKey(bbox[0], bbox[1], category);
-  const cached = cache.get(key);
-  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
-    return cached.data;
-  }
-
-  const query = buildQuery(bbox, tagsForCategory(category));
+async function fetchOnce(query, timeoutMs) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(OVERPASS_URL, {
       method: "POST",
@@ -48,21 +40,46 @@ export async function fetchRealPoints(bbox, category) {
       signal: controller.signal,
     });
     if (!res.ok) throw new Error(`Overpass ${res.status}`);
-    const json = await res.json();
-    const points = (json.elements ?? [])
-      .map((el) => {
-        const name = el.tags?.name ?? "Negocio similar";
-        const kind = el.tags?.amenity ?? el.tags?.shop ?? "negocio";
-        if (el.type === "node") return { lat: el.lat, lng: el.lon, name, kind };
-        if (el.center) return { lat: el.center.lat, lng: el.center.lon, name, kind };
-        return null;
-      })
-      .filter(Boolean);
-
-    const data = { points, source: "osm" };
-    cache.set(key, { data, at: Date.now() });
-    return data;
+    return res.json();
   } finally {
     clearTimeout(timeout);
   }
+}
+
+export async function fetchRealPoints(bbox, category) {
+  const key = cacheKey(bbox[0], bbox[1], category);
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  const query = buildQuery(bbox, tagsForCategory(category));
+
+  // A single connection-level failure (ETIMEDOUT/ECONNRESET) is often
+  // transient on Overpass's shared public instance — worth one quick retry
+  // before giving up and letting the caller fall back to an estimate.
+  let json;
+  try {
+    json = await fetchOnce(query, 15000);
+  } catch (firstErr) {
+    try {
+      json = await fetchOnce(query, 15000);
+    } catch {
+      throw firstErr;
+    }
+  }
+
+  const points = (json.elements ?? [])
+    .map((el) => {
+      const name = el.tags?.name ?? "Negocio similar";
+      const kind = el.tags?.amenity ?? el.tags?.shop ?? "negocio";
+      if (el.type === "node") return { lat: el.lat, lng: el.lon, name, kind };
+      if (el.center) return { lat: el.center.lat, lng: el.center.lon, name, kind };
+      return null;
+    })
+    .filter(Boolean);
+
+  const data = { points, source: "osm" };
+  cache.set(key, { data, at: Date.now() });
+  return data;
 }

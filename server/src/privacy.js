@@ -7,6 +7,7 @@ const VISIBILITIES = new Set(["private", "business", "profile"]);
 const CATEGORIES = new Set(["cafeteria", "restaurante", "tienda-abarrotes", "salon-belleza", "taller-mecanico", "papeleria", "otro"]);
 const EXPERIENCE = new Set(["ninguna", "poca", "intermedia", "experto"]);
 const KINDS = new Set(["abogado", "contador", "asesor-financiero", "marketing", "gestoria", "insumos"]);
+const COUNTRIES = new Set(["Mexico", "Colombia", "Argentina", "Chile", "Peru", "Otro"]);
 
 export class ValidationError extends Error {
   constructor(message) {
@@ -99,6 +100,34 @@ export function sanitizeSteps(input) {
     title: str(s?.title, 120, `steps[${i}].title`) ?? "",
     status: str(s?.status, 20, `steps[${i}].status`) ?? "locked",
   }));
+}
+
+// This is the user's own onboarding data, generating THEIR OWN report —
+// not data shared with the network — so it isn't gated by `visibility`
+// (that governs what providers/other users see, not what the person
+// generating their own report can tell the model about themself).
+export function sanitizeBusinessForm(input) {
+  if (!input || typeof input !== "object") throw new ValidationError("businessForm is required");
+
+  const businessType = str(input.businessType, 120, "businessType", { required: true });
+  const category = str(input.category, 40, "category", { required: true });
+  if (!CATEGORIES.has(category)) throw new ValidationError("category is invalid");
+
+  const budget = Number(input.budget);
+  if (!Number.isFinite(budget) || budget < 50 || budget > 500000) throw new ValidationError("budget must be between 50 and 500000");
+
+  const experience = str(input.experience, 20, "experience", { required: true });
+  if (!EXPERIENCE.has(experience)) throw new ValidationError("experience is invalid");
+
+  const location = input.location && typeof input.location === "object" ? input.location : {};
+  const country = str(location.country, 40, "location.country", { required: true });
+  const state = str(location.state, 80, "location.state", { required: true });
+  const city = str(location.city, 80, "location.city", { required: true });
+  if (!COUNTRIES.has(country)) throw new ValidationError("location.country is invalid");
+
+  const description = str(input.description, 600, "description") ?? "";
+
+  return { businessType, category, budget: Math.round(budget), experience, description, location: { country, state, city } };
 }
 
 export function sanitizeReportNumbers(input) {

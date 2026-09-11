@@ -1,7 +1,7 @@
 import { useState, type ComponentType } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { generateMockReport } from "../data/mockData";
+import { generateReport } from "../lib/report";
 import type { BusinessCategory } from "../types";
 import {
   IconArrowLeft,
@@ -42,7 +42,7 @@ const experienceLevels: { value: "ninguna" | "poca" | "intermedia" | "experto"; 
   { value: "experto", label: "Experto", desc: "Tengo o tuve varios negocios", bars: 4 },
 ];
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 export default function BusinessForm() {
   const navigate = useNavigate();
@@ -56,6 +56,9 @@ export default function BusinessForm() {
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
   const [experience, setExperience] = useState<"ninguna" | "poca" | "intermedia" | "experto" | null>(null);
+  const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const canAdvance = [
     businessType.trim().length > 0,
@@ -63,23 +66,35 @@ export default function BusinessForm() {
     budget >= 50,
     state.trim().length > 0 && city.trim().length > 0,
     experience !== null,
+    true, // description is optional
   ][step];
 
-  const submitForm = (exp: NonNullable<typeof experience>, cat: NonNullable<typeof category>) => {
+  const submitForm = async (exp: NonNullable<typeof experience>, cat: NonNullable<typeof category>) => {
     const form = {
       businessType,
       category: cat,
       budget,
       location: { country, state, city },
       experience: exp,
+      description: description.trim() || undefined,
     };
     saveBusinessForm(form);
-    saveReport(generateMockReport(form));
-    navigate(user ? "/onboarding/mapa" : "/auth");
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const report = await generateReport(form);
+      saveReport(report);
+      navigate(user ? "/onboarding/mapa" : "/auth");
+    } catch (err) {
+      // generateReport already falls back internally on network errors, so
+      // reaching here means something unexpected happened client-side.
+      setSubmitError(err instanceof Error ? err.message : "No se pudo generar tu reporte");
+      setIsSubmitting(false);
+    }
   };
 
   const goNext = () => {
-    if (!canAdvance) return;
+    if (!canAdvance || isSubmitting) return;
     if (step < TOTAL_STEPS - 1) {
       setStep((s) => s + 1);
       return;
@@ -138,7 +153,7 @@ export default function BusinessForm() {
                 onChange={(e) => setBusinessType(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && goNext()}
               />
-              <p className="wizard-next">Después: categoría, presupuesto, ciudad y experiencia.</p>
+              <p className="wizard-next">Después: categoría, presupuesto, ciudad, experiencia y una descripción más completa.</p>
             </div>
           )}
 
@@ -239,7 +254,7 @@ export default function BusinessForm() {
                     className={`level-card${experience === lvl.value ? " selected" : ""}`}
                     onClick={() => {
                       setExperience(lvl.value);
-                      setTimeout(() => submitForm(lvl.value, category!), 220);
+                      setTimeout(() => setStep(5), 220);
                     }}
                   >
                     <div className="level-bars">
@@ -266,9 +281,31 @@ export default function BusinessForm() {
             </div>
           )}
 
+          {step === 5 && (
+            <div className="stack" style={{ gap: 18 }}>
+              <span className="pill">Paso 6 de {TOTAL_STEPS}</span>
+              <h1 className="wizard-question">Cuéntanos más de tu negocio</h1>
+              <p>Esto es lo que la IA lee para entender tu idea de verdad, no solo su categoría: el concepto, a quién le vendes, qué lo hace distinto. Es opcional, pero entre más contexto des, más útil será tu reporte y las recomendaciones de tu equipo.</p>
+              <div className="field">
+                <label htmlFor="description">Descripción de tu negocio (opcional)</label>
+                <textarea
+                  id="description"
+                  rows={5}
+                  maxLength={600}
+                  placeholder="Ej. Quiero abrir un espacio pequeño enfocado en café de especialidad de productores mexicanos, con venta de grano para llevar. Busco un ambiente tranquilo para trabajar, no una cafetería de paso rápido."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={isSubmitting}
+                />
+                <span className="muted" style={{ alignSelf: "flex-end" }}>{description.length}/600</span>
+              </div>
+              {submitError && <span className="muted" style={{ color: "var(--warn)" }}>No se pudo generar tu reporte con IA ({submitError}). Intenta de nuevo.</span>}
+            </div>
+          )}
+
           {step !== 1 && step !== 4 && (
-            <button className="btn btn-primary" disabled={!canAdvance} onClick={goNext} style={{ alignSelf: "flex-start", padding: "12px 28px" }}>
-              {step === TOTAL_STEPS - 1 ? "Generar mi reporte" : "Continuar"}
+            <button className="btn btn-primary" disabled={!canAdvance || isSubmitting} onClick={goNext} style={{ alignSelf: "flex-start", padding: "12px 28px" }}>
+              {isSubmitting ? "Generando tu reporte con datos reales…" : step === TOTAL_STEPS - 1 ? "Generar mi reporte" : "Continuar"}
             </button>
           )}
         </div>

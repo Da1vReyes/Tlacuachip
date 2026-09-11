@@ -11,7 +11,10 @@ budget (from $50 to $500,000 MXN) turn it into a real business. Flow:
 
 1. **Landing → sign up/login** (`web/src/pages/Landing.tsx`, `Auth.tsx`)
 2. **Onboarding wizard** — one question at a time, game-like, not a form
-   (`web/src/pages/BusinessForm.tsx`)
+   (`web/src/pages/BusinessForm.tsx`). Last step is a free-text description
+   of the business (optional but pushed hard in copy) — it's sent to the AI
+   for both the report and the team recommendations, so the reading is
+   about *this* business, not just its category.
 3. **Privacy choice** at sign-up — the user chooses private, key-business-data
    or full-profile visibility (`Auth.tsx`)
 4. **Map interpretation onboarding** — required before dashboard. Three
@@ -32,6 +35,11 @@ budget (from $50 to $500,000 MXN) turn it into a real business. Flow:
    anything leaves the device (`Team.tsx`, `lib/privacy.ts`, `lib/matching.ts`).
 9. **Mentors / Marketplace / Community / Settings** — supporting screens.
    `Settings.tsx` owns profile visibility, location precision and data deletion.
+10. **Tutorial** (`Tutorial.tsx`, route `/tutorial`) — a plain-language walk
+    through the whole flow plus a dedicated explainer for "Tu equipo"
+    specifically (that screen confuses first-time users the most). Linked
+    from the sidebar under "Ayuda" and shown as a dismissible banner on
+    Dashboard until `preferences.tutorialSeen` is set.
 
 **Two roles.** At sign-up the user picks *Quiero emprender* or *Ofrezco
 servicios* (`Auth.tsx`, `user.role`). Providers get their own flow:
@@ -115,14 +123,32 @@ There's no test suite yet (hackathon timeline). If you add non-trivial logic
   through `useApp()` — don't reach into `localStorage` directly from a page.
   `preferences` owns profile visibility, location precision, selected zone
   and the mandatory map-onboarding completion state.
-- **Report + heatmap data is mock**, generated deterministically from the
-  business form (`web/src/data/mockData.ts`) — same input always produces
-  the same numbers, so it's not random noise, but it isn't real market data
-  either. Say so if it comes up in a demo or pitch.
+- **The market report is generated, not mock**, since `POST /api/report`
+  (`server/src/report.js`) landed: it geocodes the business's city, counts
+  REAL nearby similar businesses via Overpass, and asks the model to reason
+  growth/revenue/survival/insights from that real count plus the business's
+  own form — including the free-text `description` field
+  (`BusinessFormData.description`, filled in the wizard's last step). The
+  model is explicitly told a `0` count can mean "Overpass didn't answer",
+  not "confirmed no competition" — don't remove that instruction, we hit
+  the model confidently claiming an empty market once before adding it.
+  `web/src/lib/report.ts → generateReport()` calls it and only falls back to
+  `generateMockReport` (`web/src/data/mockData.ts`) if the SERVER itself is
+  unreachable — the server already handles Overpass/model failures
+  internally, so this outer fallback is a last resort, not the common path.
+  `ReportData.source` (`"llm" | "fallback"`) and `.osmAvailable` tell you
+  which happened; `Report.tsx` shows both.
 - **Heatmap "oferta" (supply) is real**, sourced live from OpenStreetMap via
   `server/src/overpass.js` → `GET /api/density`. Demand and cost are still
-  estimated. This is the one number in the app you can defend as not made
-  up — see the credibility discussion this repo grew out of.
+  estimated. Same real source powers `/api/report`'s count.
+- **Node's `fetch` needs IPv4 preferred** (`server/src/index.js` calls
+  `dns.setDefaultResultOrder("ipv4first")` at startup) — some networks have
+  a broken IPv6 route to Overpass's public instance (which still publishes
+  AAAA records) and Node's fetch tries IPv6 first, hanging for the full
+  timeout before falling back; `curl` doesn't have this problem, which is
+  what made it confusing to debug. If you see Overpass timing out in Node
+  while `curl` to the same URL works fine, this is why. `fetchRealPoints`
+  also retries once on a connection-level failure before giving up.
 - Routing is `HashRouter` (`react-router-dom`) — URLs look like
   `/#/roadmap`. That's deliberate: it means `web/` can be deployed as a
   static site with zero server-side routing config. Query strings live
@@ -215,10 +241,13 @@ file unless you have a concrete reason; they're flagged, not broken.
 
 ## Known gaps / next steps
 
-- **Demand and cost in the heatmap are still estimated**, not real. Next
-  highest-value data source: INEGI/DENUE (Mexico's business census) for
-  actual formal-sector business counts and sector growth, replacing
-  `generateMockReport` in `web/src/data/mockData.ts`.
+- **Demand and cost in the heatmap are still estimated**, not real (supply
+  and the report's business count are). Next highest-value data source:
+  INEGI/DENUE (Mexico's business census, needs a free API token — see the
+  DENUE validation notes from this repo's planning discussion) for
+  formal-sector counts and sector growth by municipality, which would
+  upgrade `server/src/report.js`'s heuristic beyond "real count + AI
+  reasoning" to "real count + real published growth stats + AI reasoning."
 - **No auth backend** — "login" just stores a name/email in `localStorage`.
   `services/user-service` now persists users/profiles/progress for real
   (SQLite), but the web app doesn't call it yet — see `services/README.md`

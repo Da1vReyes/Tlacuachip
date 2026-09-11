@@ -68,11 +68,20 @@ export default function Report() {
   return (
     <div className="stack" style={{ gap: 20 }}>
       <div className="stack" style={{ gap: 6 }}>
-        <span className="pill">Reporte de {businessForm.location.city}</span>
+        <div className="row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <span className="pill">Reporte de {businessForm.location.city}</span>
+          {report.source === "llm" ? (
+            <span className="pill pill-success">Generado con IA a partir de datos reales</span>
+          ) : (
+            <span className="pill pill-warn">Estimación local (sin conexión a la IA)</span>
+          )}
+        </div>
         <h1>Así está el mercado para "{businessForm.businessType}"</h1>
         <p>
-          Los indicadores de crecimiento, ingreso y supervivencia son estimaciones del prototipo; el conteo de negocios
-          en tu zona sí proviene de OpenStreetMap. Nada de esto es una recomendación financiera.
+          {report.osmAvailable
+            ? "El conteo de negocios en tu zona proviene de OpenStreetMap en tiempo real. "
+            : "No pudimos consultar OpenStreetMap en este momento, así que el conteo de negocios quedó en 0 — el resto del reporte sigue siendo válido como estimación. "}
+          Crecimiento, ingreso y supervivencia son una lectura razonada a partir de esos datos, no cifras oficiales. Nada de esto es una recomendación financiera.
         </p>
       </div>
 
@@ -87,7 +96,7 @@ export default function Report() {
         <div className="card">
           <div className="muted">Negocios similares</div>
           <div style={{ fontSize: 24, fontWeight: 700 }}>{report.localBusinessCount}</div>
-          <div className="muted">registrados</div>
+          <div className="muted">{report.osmAvailable ? "dato real · OpenStreetMap" : "sin datos disponibles"}</div>
         </div>
         <div className="card">
           <div className="muted">Ingreso mensual prom.</div>
@@ -118,12 +127,17 @@ export default function Report() {
             {aiResult?.source === "llm" ? (
               <span className="row" style={{ gap: 6, alignItems: "center" }}>
                 <span style={{ color: "var(--success)", display: "inline-flex" }}><IconCheck size={13} /></span>
-                Interpretación generada con IA ({aiResult.model}) a partir de los indicadores de arriba y solo los datos que elegiste compartir. No es asesoría.
+                Reinterpretado con IA ({aiResult.model}) a partir de los indicadores de arriba y solo los datos que elegiste compartir. No es asesoría.
+              </span>
+            ) : report.source === "llm" ? (
+              <span className="row" style={{ gap: 6, alignItems: "center" }}>
+                <span style={{ color: "var(--success)", display: "inline-flex" }}><IconCheck size={13} /></span>
+                Estos insights ya se generaron con IA al crear tu reporte, incluyendo lo que describiste sobre tu negocio. Puedes pedir una nueva lectura cuando quieras.
               </span>
             ) : aiStatus && !aiStatus.configured ? (
-              "IA no configurada en el servidor: se muestra la interpretación base del prototipo."
+              "IA no configurada en el servidor: se muestra la interpretación base local."
             ) : (
-              "Interpretación base del prototipo. Pide a la IA una lectura sobre tus números cuando quieras."
+              "Este reporte se generó sin conexión a la IA. Puedes pedir una interpretación ahora si el servicio ya está disponible."
             )}
           </span>
           {error && <span className="muted" style={{ color: "var(--warn)", fontSize: 12.5 }}>La IA no respondió ({error}).</span>}

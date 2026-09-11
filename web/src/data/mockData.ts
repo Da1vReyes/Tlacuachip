@@ -9,7 +9,7 @@ import type {
   ZoneMetrics,
 } from "../types";
 
-export function generateMockReport(form: BusinessFormData): ReportData {
+export function generateMockReport(form: BusinessFormData): Omit<ReportData, "source" | "osmAvailable"> {
   return {
     sectorGrowthPercent: 8.4,
     sectorGrowthPeriod: "2023-2025",
