@@ -8,7 +8,7 @@ export default function Landing() {
 
   return (
     <div className="auth-page">
-      <div style={{ width: "100%", maxWidth: 900, display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 48, alignItems: "center" }}>
+      <div className="landing-layout">
         <div className="stack" style={{ gap: 22 }}>
           <div className="row" style={{ alignItems: "center", gap: 10 }}>
             <div className="sidebar-logo-mark" style={{ width: 36, height: 36 }}>
@@ -16,7 +16,7 @@ export default function Landing() {
             </div>
             <span style={{ fontWeight: 700, fontSize: 15 }}>Tlacuachip</span>
           </div>
-          <h1 style={{ fontSize: 40 }}>Empieza tu negocio con datos reales de tu zona</h1>
+          <h1 className="landing-title">Empieza tu negocio con datos de tu zona.</h1>
           <p style={{ fontSize: 15.5 }}>
             Cuéntanos qué quieres emprender y cuánto tienes para invertir. Te damos un reporte
             con datos oficiales de tu localidad y un roadmap paso a paso para arrancar.
@@ -33,9 +33,9 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="stack" style={{ gap: 14 }}>
-          <div className="card row" style={{ alignItems: "center", gap: 14 }}>
-            <div className="sidebar-logo-mark" style={{ background: "var(--accentBlue)" }}>
+        <div className="landing-evidence">
+          <div className="landing-evidence-row">
+            <div className="landing-evidence-icon">
               <IconChart size={16} />
             </div>
             <div className="stack" style={{ gap: 2 }}>
@@ -43,8 +43,8 @@ export default function Landing() {
               <span className="muted">Datos oficiales de tu localidad</span>
             </div>
           </div>
-          <div className="card row" style={{ alignItems: "center", gap: 14 }}>
-            <div className="sidebar-logo-mark" style={{ background: "var(--accentBlue)" }}>
+          <div className="landing-evidence-row">
+            <div className="landing-evidence-icon">
               <IconRoute size={16} />
             </div>
             <div className="stack" style={{ gap: 2 }}>
@@ -52,8 +52,8 @@ export default function Landing() {
               <span className="muted">Un paso a la vez, con XP y niveles</span>
             </div>
           </div>
-          <div className="card row" style={{ alignItems: "center", gap: 14 }}>
-            <div className="sidebar-logo-mark" style={{ background: "var(--accentBlue)" }}>
+          <div className="landing-evidence-row">
+            <div className="landing-evidence-icon">
               <IconUsers size={16} />
             </div>
             <div className="stack" style={{ gap: 2 }}>

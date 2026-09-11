@@ -2,7 +2,7 @@
 
 ## Direction
 
-Minimal operating interface: quiet off-white canvas, near-black typography, thin warm-gray rules and one restrained cobalt signal color. The interface prioritizes decisions and evidence over decorative dashboards.
+Minimal operating interface: quiet off-white canvas, near-black typography, thin warm-gray rules and cobalt reserved only for live map/data signals. Primary actions are near-black. The interface prioritizes decisions and evidence over decorative dashboards.
 
 ## Layout
 
@@ -13,7 +13,7 @@ Minimal operating interface: quiet off-white canvas, near-black typography, thin
 ## Components
 
 - Flat panels use a 1px border and no elevation by default.
-- Buttons are compact, rectangular with a small radius; primary actions use cobalt.
+- Buttons are compact, rectangular with a small radius; primary actions use near-black.
 - Statuses use text and a thin dot/badge, never a large colorful card.
 - Motion is short (180–300 ms), purposeful and respects reduced-motion preferences.
 

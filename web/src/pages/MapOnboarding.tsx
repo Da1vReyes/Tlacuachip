@@ -81,7 +81,6 @@ export default function MapOnboarding() {
 
       <main className="map-onboarding-main">
         <section className="map-onboarding-intro">
-          <span className="minimal-label">Antes del dashboard</span>
           <h1>Lee tu zona con tres señales.</h1>
           <p>Primero mira la competencia, después la oportunidad de consumo y finalmente el costo de operar. No te vamos a decir qué hacer: te damos contexto para decidir.</p>
         </section>
@@ -118,7 +117,6 @@ export default function MapOnboarding() {
           </div>
 
           <aside className="decision-panel">
-            <span className="minimal-label">La pregunta de esta capa</span>
             <h2>{copy[signal].question}</h2>
             {realCount !== undefined && signal === "supply" && <div className="data-proof"><span />{realCount} negocios similares detectados</div>}
             {geoStatus === "loading" && <p>Estamos ubicando tu ciudad para mostrar las zonas cercanas.</p>}
@@ -133,7 +131,6 @@ export default function MapOnboarding() {
 
         <section className="location-choice">
           <div>
-            <span className="minimal-label">Tu decisión</span>
             <h2>¿Cómo vas a usar este análisis?</h2>
           </div>
           <label className={`choice-row${preferences.locationMode === "explore" ? " selected" : ""}`}>
