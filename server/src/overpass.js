@@ -42,7 +42,7 @@ export async function fetchRealPoints(bbox, category) {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         Accept: "*/*",
-        "User-Agent": "tlacuachip-hackathon/1.0",
+        "User-Agent": "tlacuachic-hackathon/1.0",
       },
       body: `data=${encodeURIComponent(query)}`,
       signal: controller.signal,

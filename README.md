@@ -1,6 +1,6 @@
-# Tlacuachip
+# Tlacuachic
 
-Tlacuachip helps first-time entrepreneurs in Latin America turn an idea into a
+Tlacuachic helps first-time entrepreneurs in Latin America turn an idea into a
 real business: a data-backed market report, a real-business-density heatmap,
 a gamified step-by-step roadmap, and a marketplace of mentors and suppliers.
 
@@ -35,7 +35,7 @@ The key stays on the server. The UI tells you whether the AI is configured.
 ## Structure
 
 ```
-tlacuachip/
+tlacuachic/
 ├── web/       React + TypeScript + Vite frontend
 ├── server/    Node + Express API (OpenStreetMap density, OpenRouter AI routes)
 ├── services/  user-service + catalog-service — real SQLite persistence, not wired yet

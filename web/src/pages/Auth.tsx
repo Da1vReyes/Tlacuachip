@@ -71,7 +71,7 @@ export default function Auth() {
               </label>
               <label className={`privacy-option${preferences.visibility === "private" ? " selected" : ""}`}>
                 <input type="radio" name="visibility" checked={preferences.visibility === "private"} onChange={() => savePreferences({ visibility: "private" })} />
-                <span><strong>Mantener todo privado</strong><small>Usas Tlacuachip sin aparecer en búsquedas de la comunidad.</small></span>
+                <span><strong>Mantener todo privado</strong><small>Usas Tlacuachic sin aparecer en búsquedas de la comunidad.</small></span>
               </label>
             </fieldset>
           )}

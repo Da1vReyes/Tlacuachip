@@ -17,7 +17,7 @@ export default function Landing() {
     <div className="landing-page">
       <header className="landing-nav">
         <button className="landing-brand" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="Ir al inicio">
-          <span className="sidebar-logo-mark"><IconLeaf size={17} /></span><span>Tlacuachip</span>
+          <span className="sidebar-logo-mark"><IconLeaf size={17} /></span><span>Tlacuachic</span>
         </button>
         <nav aria-label="Navegación principal"><a href="#como-funciona">Cómo funciona</a><a href="#datos">Tus datos</a><a href="#red">Para proveedores</a></nav>
         <button className="landing-login" onClick={() => navigate(user ? "/dashboard" : "/auth")}>{user ? "Ir a mi negocio" : "Iniciar sesión"}</button>
@@ -27,7 +27,7 @@ export default function Landing() {
         <section className="landing-hero">
           <div className="landing-hero-copy landing-enter">
             <h1>No tienes que saberlo todo para empezar bien.</h1>
-            <p className="landing-lede">Una idea y ganas de emprender deberían ser suficientes para dar el primer paso. Tlacuachip te ayuda a descubrir qué necesitas revisar antes de invertir tu dinero.</p>
+            <p className="landing-lede">Una idea y ganas de emprender deberían ser suficientes para dar el primer paso. Tlacuachic te ayuda a descubrir qué necesitas revisar antes de invertir tu dinero.</p>
             <div className="landing-actions"><button className="btn btn-primary landing-cta" onClick={start}>Quiero emprender</button><button className="btn btn-secondary landing-cta" onClick={() => navigate("/auth?role=provider")}>Ofrezco servicios</button><span>Sin costo en este prototipo · toma cerca de 4 minutos</span></div>
           </div>
           <aside className="landing-preview landing-enter" aria-label="Vista previa del análisis">
@@ -43,7 +43,7 @@ export default function Landing() {
           <div className="landing-problem-title"><h2>El problema no es falta de ganas. Es falta de contexto.</h2></div>
           <div className="landing-problem-copy">
             <p>Muchos negocios arrancan sin conocer la competencia cercana, el costo real de operar o los trámites que deben resolver. Cuando ese descubrimiento llega tarde, se vuelve caro.</p>
-            <p>Tlacuachip convierte esas dudas en una ruta concreta: qué validar primero, dónde encontrar información oficial y a quién pedir ayuda cuando una decisión necesita experiencia.</p>
+            <p>Tlacuachic convierte esas dudas en una ruta concreta: qué validar primero, dónde encontrar información oficial y a quién pedir ayuda cuando una decisión necesita experiencia.</p>
           </div>
         </section>
 

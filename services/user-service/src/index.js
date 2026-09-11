@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 4100;
 
 app.get("/", (_req, res) => {
   res.json({
-    name: "tlacuachip-user-service",
+    name: "tlacuachic-user-service",
     owns: ["users", "business_profiles", "progress", "completed_steps"],
     endpoints: [
       "POST /api/users",
@@ -75,5 +75,5 @@ app.post("/api/users/:id/progress/complete-step", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`tlacuachip-user-service listening on http://localhost:${PORT}`);
+  console.log(`tlacuachic-user-service listening on http://localhost:${PORT}`);
 });
