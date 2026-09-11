@@ -1,6 +1,7 @@
-import { mentors } from "../data/mockData";
+import { useApp } from "../context/AppContext";
 
 export default function Mentors() {
+  const { mentors } = useApp();
   return (
     <div className="stack" style={{ gap: 20 }}>
       <div className="stack" style={{ gap: 4 }}>

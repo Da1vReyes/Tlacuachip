@@ -15,7 +15,7 @@ import { generateMockHeatmap } from "../data/mockData";
 import { useCityCenter } from "../hooks/useCityCenter";
 import { useCountUp } from "../hooks/useCountUp";
 import { IconTrendUp, IconRoute, IconChat, IconMap, IconUsers, IconHelp } from "../components/icons";
-import { communityMessages, providers } from "../data/mockData";
+import { communityMessages } from "../data/mockData";
 import { buildMinimizedProfile } from "../lib/privacy";
 import { providerKindLabel, rankProviders } from "../lib/matching";
 
@@ -50,7 +50,7 @@ function KpiValue({ value, prefix = "", suffix = "" }: { value: number; prefix?:
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { businessForm, report, steps, progress, preferences, savePreferences } = useApp();
+  const { businessForm, report, steps, progress, preferences, savePreferences, catalogProviders: providers } = useApp();
   const { center } = useCityCenter(businessForm);
 
   const heatmap = useMemo(() => (businessForm ? generateMockHeatmap(businessForm) : null), [businessForm]);

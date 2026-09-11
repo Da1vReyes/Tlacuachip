@@ -3,14 +3,14 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Owns roadmap steps, mentors, and suppliers — reference/catalog data. Independent SQLite database, seeded on first boot.",
+  "description": "Owns roadmap steps, mentors, and providers — public catalog data in the same Postgres database as user-service, seeded on first boot. Exposes an internal-key-protected route for user-service to sync real provider signups into the public roster.",
   "scripts": {
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "dev": "node --watch --env-file-if-exists=.env src/index.js",
+    "start": "node --env-file-if-exists=.env src/index.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.9.1",
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "pg": "^8.23.0"
   }
 }

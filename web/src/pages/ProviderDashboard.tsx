@@ -1,13 +1,12 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { roadmapSteps } from "../data/mockData";
 import { providerKindLabel } from "../lib/matching";
 import { IconCheck } from "../components/icons";
 
 export default function ProviderDashboard() {
   const navigate = useNavigate();
-  const { user, providerProfile } = useApp();
+  const { user, providerProfile, steps: roadmapSteps } = useApp();
 
   useEffect(() => {
     if (!user) navigate("/auth?role=provider", { replace: true });

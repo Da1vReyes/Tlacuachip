@@ -1,17 +1,20 @@
 # Services
 
-Two independent services. `user-service` is **wired to the app and live**;
-`catalog-service` is not connected to anything yet.
+Two independent services, both wired to the app and live, both in the
+same shared Postgres database (different `DATABASE_URL`-pointed instance
+is fine too — they only share a schema prefix convention, not a runtime).
 
-Each owns its own data — no shared database, no service reaching into
-another's tables. That's the one microservices rule that actually matters
-at this size; there's no gateway, service discovery, or message bus, and
-there doesn't need to be yet.
+Each owns its own tables — no service reaches into another's. The only
+cross-service communication is a single internal, shared-secret-protected
+route: `user-service` calls it to keep `catalog-service`'s public provider
+roster in sync when someone saves a real provider profile. That's it; no
+gateway, service discovery, or message bus, and there doesn't need to be
+yet.
 
 | Service | Port | Owns | Status |
 |---|---|---|---|
 | [`user-service`](./user-service) | 4100 | users, business profiles, reports, progress, preferences, provider profiles, saved teams | **Wired in.** Real Postgres, JWT auth |
-| [`catalog-service`](./catalog-service) | 4200 | roadmap steps, mentors, suppliers | Not connected. Still SQLite, still the old schema (see below) |
+| [`catalog-service`](./catalog-service) | 4200 | roadmap steps, mentors, providers (seed + real accounts) | **Wired in.** Real Postgres, public reads, internal-key-protected writes |
 
 ## user-service
 
@@ -47,10 +50,10 @@ GET    /api/me/progress
 POST   /api/me/progress/complete-step            { stepId, xp }
 PUT    /api/me/preferences                       any subset of DataPreferences
 GET    /api/me/provider-profile
-PUT    /api/me/provider-profile                  { name, kind, isAI, city, country, description, helpsWith }
+PUT    /api/me/provider-profile                  { name, kind, isAI, city, country, description, helpsWith } — also syncs into catalog-service's public roster (see below)
 GET    /api/me/team
 POST   /api/me/team/:providerId/toggle
-DELETE /api/me                                    deletes the account and everything under it (ON DELETE CASCADE)
+DELETE /api/me                                    deletes the account and everything under it (ON DELETE CASCADE), also removes it from catalog-service's roster
 ```
 
 `web/src/lib/userApi.ts` is the only file that should call this directly —
@@ -65,13 +68,37 @@ user data at scale.
 
 ## catalog-service
 
-Roadmap steps, mentors, and suppliers, seeded on first boot. Still runs on
-SQLite and the schema predates the current roadmap step ids and provider
-shape (`kind`/`isAI`/`helpsWith` — see `web/src/types/index.ts`). Nothing
-calls it. If you wire it in, update `schema.sql` and `seed.js` to match
-the current shapes first, or the ids won't line up with what
-`web/src/data/mockData.ts` and the roadmap actually use.
+Roadmap steps, mentors, and providers — public, read-only catalog data,
+real Postgres, seeded once on first boot (`seedIfEmpty()`, safe to restart).
+
+`tlacuachic_providers` holds two kinds of rows, distinguished by `user_id`:
+`NULL` for the shipped seed/demo providers, or a real account's id for a
+provider who actually signed up. The second kind is what makes the
+marketplace real instead of a static list: whenever `user-service` saves a
+provider profile (`PUT /api/me/provider-profile`), it calls
+`PUT /api/providers/:userId` here, authenticated with a shared
+`x-internal-key` header (not a user JWT — this service has no concept of
+auth, it just trusts whoever holds the key). Account deletion in
+`user-service` calls the matching `DELETE` route, so a removed account
+disappears from the public roster too. Both calls are fire-and-forget on
+`user-service`'s side — if `catalog-service` is briefly down, the user's
+own save still succeeds, it just doesn't propagate until the next save.
 
 ```bash
-cd catalog-service && npm install && npm run dev   # :4200, creates + seeds data/catalog-service.db
+cp .env.example .env   # set DATABASE_URL and INTERNAL_API_KEY (must match user-service's CATALOG_INTERNAL_API_KEY)
+npm install
+npm run dev             # :4200, runs schema.sql then seeds if empty
 ```
+
+```
+GET    /api/roadmap-steps
+GET    /api/mentors
+GET    /api/providers
+PUT    /api/providers/:userId    internal only (x-internal-key) — called by user-service
+DELETE /api/providers/:userId    internal only (x-internal-key) — called by user-service
+```
+
+`web/src/lib/catalogApi.ts` fetches these on app mount; `AppContext.tsx`
+keeps the bundled `web/src/data/mockData.ts` content as the initial state
+and fallback, so the app still works with demo data if this service is
+unreachable.

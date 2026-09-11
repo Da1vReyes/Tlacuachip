@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { BusinessFormData, DataPreferences, ProviderProfile, ReportData, User, UserProgress, UserRole } from "../types";
-import { roadmapSteps as initialSteps } from "../data/mockData";
-import type { RoadmapStep } from "../types";
+import { roadmapSteps as initialSteps, mentors as fallbackMentors, providers as fallbackProviders } from "../data/mockData";
+import type { Mentor, Provider, RoadmapStep } from "../types";
+import { fetchRoadmapSteps, fetchMentors, fetchProviders } from "../lib/catalogApi";
 import {
   signup as apiSignup,
   login as apiLogin,
@@ -37,6 +38,8 @@ interface AppState {
   providerProfile: ProviderProfile | null;
   team: string[];
   steps: RoadmapStep[];
+  mentors: Mentor[];
+  catalogProviders: Provider[];
   authReady: boolean;
   authError: string | null;
   /** Resolves with a snapshot of what the server actually returned — not
@@ -143,6 +146,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [team, setTeam] = useState<string[]>(persisted.team);
   const [authReady, setAuthReady] = useState(!token);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [catalogSteps, setCatalogSteps] = useState<Omit<RoadmapStep, "status">[]>(initialSteps);
+  const [mentors, setMentors] = useState<Mentor[]>(fallbackMentors);
+  const [catalogProviders, setCatalogProviders] = useState<Provider[]>(fallbackProviders);
   const skipNextPersist = useRef(false);
   const tokenRef = useRef(token);
   tokenRef.current = token;
@@ -198,7 +204,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const steps = unlockNextSteps(initialSteps, progress.completedSteps);
+  // Fetch the real catalog once on mount; keep the static mockData content
+  // as the initial state and fallback, matching the app's established
+  // graceful-degradation pattern (if catalog-service is down, the app
+  // still works with the bundled demo data).
+  useEffect(() => {
+    let cancelled = false;
+    fetchRoadmapSteps()
+      .then((rows) => {
+        if (!cancelled && rows.length > 0) setCatalogSteps(rows as RoadmapStep[]);
+      })
+      .catch(() => {});
+    fetchMentors()
+      .then((rows) => {
+        if (!cancelled && rows.length > 0) setMentors(rows);
+      })
+      .catch(() => {});
+    fetchProviders()
+      .then((rows) => {
+        if (!cancelled && rows.length > 0) setCatalogProviders(rows);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const steps = unlockNextSteps(catalogSteps as RoadmapStep[], progress.completedSteps);
 
   // Shared by signup and login: apply a freshly-fetched profile to state
   // and hand back a plain snapshot of it. Callers (Auth.tsx) use the
@@ -313,7 +345,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let awardedXp = 0;
     setProgress((prev) => {
       if (prev.completedSteps.includes(stepId)) return prev;
-      const step = initialSteps.find((s) => s.id === stepId);
+      const step = catalogSteps.find((s) => s.id === stepId);
       awardedXp = step?.xp ?? 0;
       const newXp = prev.xp + awardedXp;
       const newLevel = Math.floor(newXp / 400) + 1;
@@ -338,6 +370,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         providerProfile,
         team,
         steps,
+        mentors,
+        catalogProviders,
         authReady,
         authError,
         signup,

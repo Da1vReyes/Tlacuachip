@@ -1,15 +1,21 @@
-import Database from "better-sqlite3";
-import { readFileSync, mkdirSync } from "node:fs";
+import pg from "pg";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
+const { Pool } = pg;
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dataDir = join(__dirname, "..", "data");
-mkdirSync(dataDir, { recursive: true });
 
-const dbPath = process.env.DB_PATH ?? join(dataDir, "catalog-service.db");
-export const db = new Database(dbPath);
-db.pragma("journal_mode = WAL");
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is required — copy .env.example to .env and set it.");
+}
 
-const schema = readFileSync(join(__dirname, "schema.sql"), "utf-8");
-db.exec(schema);
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+
+export async function migrate() {
+  const schema = readFileSync(join(__dirname, "schema.sql"), "utf-8");
+  await pool.query(schema);
+}
