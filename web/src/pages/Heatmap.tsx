@@ -34,7 +34,7 @@ const COL_OFFSET = [-0.014, 0, 0.014];
 
 export default function Heatmap() {
   const navigate = useNavigate();
-  const { businessForm } = useApp();
+  const { businessForm, preferences } = useApp();
   const [metric, setMetric] = useState<Metric>("opportunityScore");
   const [selected, setSelected] = useState<ZoneMetrics | null>(null);
   const [revealedCount, setRevealedCount] = useState(0);
@@ -69,9 +69,10 @@ export default function Heatmap() {
 
   useEffect(() => {
     if (!businessForm) navigate("/formulario", { replace: true });
-  }, [businessForm, navigate]);
+    else if (!preferences.onboardingComplete) navigate("/onboarding/mapa", { replace: true });
+  }, [businessForm, preferences.onboardingComplete, navigate]);
 
-  if (!businessForm || !heatmap) {
+  if (!businessForm || !heatmap || !preferences.onboardingComplete) {
     return null;
   }
 

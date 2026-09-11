@@ -48,7 +48,7 @@ function KpiValue({ value, prefix = "", suffix = "" }: { value: number; prefix?:
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { businessForm, report, steps, progress } = useApp();
+  const { businessForm, report, steps, progress, preferences } = useApp();
   const { center } = useCityCenter(businessForm);
 
   const heatmap = useMemo(() => (businessForm ? generateMockHeatmap(businessForm) : null), [businessForm]);
@@ -67,9 +67,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!ready) navigate("/formulario", { replace: true });
-  }, [ready, navigate]);
+    else if (!preferences.onboardingComplete) navigate("/onboarding/mapa", { replace: true });
+  }, [ready, preferences.onboardingComplete, navigate]);
 
-  if (!businessForm || !report) {
+  if (!businessForm || !report || !preferences.onboardingComplete) {
     return null;
   }
 
@@ -141,7 +142,7 @@ export default function Dashboard() {
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: "rgba(0,0,0,0.5)" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "rgba(0,0,0,0.5)" }} axisLine={false} tickLine={false} width={48} />
                 <Tooltip
-                  formatter={(v: number) => [`$${v.toLocaleString()} MXN`, "Ingreso"]}
+              formatter={(v) => [`$${Number(v ?? 0).toLocaleString()} MXN`, "Ingreso"]}
                   contentStyle={{ borderRadius: 10, border: "1px solid var(--cardBorder)", fontSize: 12.5 }}
                 />
                 <Area

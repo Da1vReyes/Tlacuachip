@@ -12,15 +12,21 @@ budget (from $50 to $500,000 MXN) turn it into a real business. Flow:
 1. **Landing → sign up/login** (`web/src/pages/Landing.tsx`, `Auth.tsx`)
 2. **Onboarding wizard** — one question at a time, game-like, not a form
    (`web/src/pages/BusinessForm.tsx`)
-3. **Market report** with sector stats and sources (`Report.tsx`)
-4. **Heatmap** — real business density per zone from OpenStreetMap, blended
-   with estimated demand/cost (`Heatmap.tsx`)
-5. **Dashboard** — KPIs, revenue projection chart, budget breakdown, roadmap
+3. **Privacy choice** at sign-up — the user chooses private, key-business-data
+   or full-profile visibility (`Auth.tsx`)
+4. **Map interpretation onboarding** — required before dashboard. Three
+   layers (supply, demand, cost) explain the evidence, let the user select a
+   zone and state whether they are exploring or already have a location
+   (`MapOnboarding.tsx`)
+5. **Dashboard** — only after map onboarding. KPIs, revenue projection chart, budget breakdown, roadmap
    progress, community feed (`Dashboard.tsx`)
-6. **Roadmap** — horizontal gamified timeline of steps to actually open the
+6. **Market report / full map** — deeper sources and continued exploration
+   (`Report.tsx`, `Heatmap.tsx`)
+7. **Roadmap** — horizontal gamified timeline of steps to actually open the
    business, each connecting to mentors/suppliers when relevant
    (`Roadmap.tsx`, `StepDetail.tsx`)
-7. **Mentors / Marketplace / Community** — supporting screens
+8. **Mentors / Marketplace / Community / Settings** — supporting screens.
+   `Settings.tsx` owns profile visibility, location precision and data deletion.
 
 ## Repo layout
 
@@ -81,6 +87,8 @@ There's no test suite yet (hackathon timeline). If you add non-trivial logic
   state: `user`, `businessForm`, `report`, `progress` (level/XP/completed
   steps), all persisted to `localStorage` under one JSON key. Read/write it
   through `useApp()` — don't reach into `localStorage` directly from a page.
+  `preferences` owns profile visibility, location precision, selected zone
+  and the mandatory map-onboarding completion state.
 - **Report + heatmap data is mock**, generated deterministically from the
   business form (`web/src/data/mockData.ts`) — same input always produces
   the same numbers, so it's not random noise, but it isn't real market data
@@ -97,11 +105,10 @@ There's no test suite yet (hackathon timeline). If you add non-trivial logic
 
 Everything lives in `web/src/index.css` as CSS custom properties + utility
 classes — there's no component library, no Tailwind, no CSS-in-JS. The
-palette and type scale were lifted from a real open-source dashboard
-([nellavio](https://github.com/nellavio/nellavio)) rather than invented:
-`Outfit` font, `rounded-xl` cards (`--radius: 12px`), accent blue
-(`--accentBlue: #3870e3`), the `--cardShadow` value. If you add a new color
-or spacing value, check `index.css` first — it's probably already a token.
+current direction is deliberately **minimal operating UI**: warm off-white
+canvas, thin gray rules, near-black text and one cobalt signal color. Flat
+panels use borders, not elevation. Follow `DESIGN.md`; do not reintroduce
+dashboard-card shadows or decorative gradients.
 
 Icons are hand-drawn inline SVG in `web/src/components/icons.tsx`
 (stroke-based, 24×24 viewBox, `currentColor`). **No emoji, no icon-font
@@ -111,7 +118,7 @@ Motion conventions (also in `index.css`):
 - `.page-enter` — fade+slide on route change (wired once in `AppShell`,
   you don't need to add it per page)
 - `.stagger > *` — staggered fade-in for list/grid children
-- `.card-hover`, `.card-clickable` — lift-on-hover for interactive cards
+- `.card-hover`, `.card-clickable` — restrained interactive feedback only
 - `.pop-in` — ease-out-quint pop for things appearing after a user action
   (no bounce/elastic easing — it reads as dated; we specifically fixed this
   once, don't reintroduce `cubic-bezier(0.34, 1.56, ...)`-style overshoot)
@@ -149,6 +156,9 @@ Motion conventions (also in `index.css`):
 - Inline `style={{}}` is used deliberately for anything data-driven
   (colors computed from a score, positions computed from a grid). Static,
   reusable styling goes in `index.css` as a class instead.
+- **Privacy is product behavior, not visual copy.** Profile visibility and
+  data deletion must update `preferences` through `useApp()`. Never expose a
+  user's email, exact budget, or precise address in public/community views.
 
 ## Known lint warnings (reviewed, intentionally left)
 

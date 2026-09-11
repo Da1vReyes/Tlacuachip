@@ -4,14 +4,15 @@ import { useApp } from "../context/AppContext";
 
 export default function Report() {
   const navigate = useNavigate();
-  const { businessForm, report } = useApp();
+  const { businessForm, report, preferences } = useApp();
   const ready = Boolean(businessForm && report);
 
   useEffect(() => {
     if (!ready) navigate("/formulario", { replace: true });
-  }, [ready, navigate]);
+    else if (!preferences.onboardingComplete) navigate("/onboarding/mapa", { replace: true });
+  }, [ready, preferences.onboardingComplete, navigate]);
 
-  if (!businessForm || !report) {
+  if (!businessForm || !report || !preferences.onboardingComplete) {
     return null;
   }
 

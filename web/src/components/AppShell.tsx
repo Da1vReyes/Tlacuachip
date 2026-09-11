@@ -1,9 +1,9 @@
 import { type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { IconRoute, IconChart, IconMap, IconUsers, IconBag, IconChat, IconLeaf, IconArrowLeft, IconGrid } from "./icons";
+import { IconRoute, IconChart, IconMap, IconUsers, IconBag, IconChat, IconLeaf, IconArrowLeft, IconGrid, IconSettings } from "./icons";
 
-const fullBleedRoutes = ["/", "/auth", "/formulario"];
+const fullBleedRoutes = ["/", "/auth", "/formulario", "/onboarding/mapa"];
 
 const navItems = [
   { section: "Tu negocio" },
@@ -15,6 +15,7 @@ const navItems = [
   { path: "/mentores", label: "Mentores", icon: IconUsers },
   { path: "/marketplace", label: "Marketplace", icon: IconBag },
   { path: "/comunidad", label: "Comunidad", icon: IconChat },
+  { path: "/configuracion", label: "Configuración", icon: IconSettings },
 ] as const;
 
 const titles: Record<string, string> = {
@@ -27,6 +28,7 @@ const titles: Record<string, string> = {
   "/marketplace": "Marketplace",
   "/proveedor/nuevo": "Registro de proveedor",
   "/comunidad": "Comunidad",
+  "/configuracion": "Configuración",
 };
 
 export default function AppShell({ children }: { children: ReactNode }) {

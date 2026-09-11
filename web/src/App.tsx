@@ -13,6 +13,8 @@ import Mentors from "./pages/Mentors";
 import Marketplace from "./pages/Marketplace";
 import ProviderSignup from "./pages/ProviderSignup";
 import Community from "./pages/Community";
+import MapOnboarding from "./pages/MapOnboarding";
+import Settings from "./pages/Settings";
 
 export default function App() {
   return (
@@ -23,6 +25,7 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/formulario" element={<BusinessForm />} />
+            <Route path="/onboarding/mapa" element={<MapOnboarding />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/reporte" element={<Report />} />
             <Route path="/mapa-calor" element={<Heatmap />} />
@@ -32,6 +35,7 @@ export default function App() {
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/proveedor/nuevo" element={<ProviderSignup />} />
             <Route path="/comunidad" element={<Community />} />
+            <Route path="/configuracion" element={<Settings />} />
           </Routes>
         </AppShell>
       </HashRouter>
