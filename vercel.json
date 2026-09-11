@@ -1,0 +1,41 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "web": {
+      "root": "web",
+      "framework": "vite"
+    },
+    "market": {
+      "root": "server",
+      "framework": "express"
+    },
+    "catalog": {
+      "root": "services/catalog-service",
+      "framework": "express"
+    },
+    "users": {
+      "root": "services/user-service",
+      "framework": "express",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "catalog",
+          "format": "url",
+          "env": "CATALOG_SERVICE_URL"
+        }
+      ]
+    }
+  },
+  "rewrites": [
+    { "source": "/api/auth/:path*", "destination": { "service": "users" } },
+    { "source": "/api/me", "destination": { "service": "users" } },
+    { "source": "/api/me/:path*", "destination": { "service": "users" } },
+    { "source": "/api/community/:path*", "destination": { "service": "users" } },
+    { "source": "/api/roadmap-steps", "destination": { "service": "catalog" } },
+    { "source": "/api/mentors", "destination": { "service": "catalog" } },
+    { "source": "/api/providers/:path*", "destination": { "service": "catalog" } },
+    { "source": "/api/providers", "destination": { "service": "catalog" } },
+    { "source": "/api/:path*", "destination": { "service": "market" } },
+    { "source": "/(.*)", "destination": { "service": "web" } }
+  ]
+}
