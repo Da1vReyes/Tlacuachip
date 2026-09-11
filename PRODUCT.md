@@ -25,12 +25,14 @@ Flujo principal: crear cuenta, describir el negocio, decidir qué datos puede ve
 ## Capabilities and Constraints
 
 - Frontend React + TypeScript + Vite; API Express en `server/`.
-- Oferta/competencia: puntos de interés de OpenStreetMap consultados por Overpass.
-- Demanda y costos: estimaciones del prototipo; deben presentarse como tales.
+- Oferta/competencia: puntos de interés de OpenStreetMap consultados por Overpass; el conteo real alimenta tanto el mapa de calor como el reporte de mercado (`POST /api/report`).
+- El reporte de mercado (crecimiento, ingreso, supervivencia, insights) lo razona la IA a partir de ese conteo real, el presupuesto y la descripción libre que el usuario escribe sobre su negocio — no son números fijos. Si el servidor está disponible pero Overpass o la IA no responden, cae a una estimación local que lo declara así.
+- Demanda y costos del mapa de calor: siguen siendo estimaciones del prototipo; deben presentarse como tales.
 - Datos del perfil se persisten localmente en esta versión; el usuario puede editar visibilidad y eliminar su registro desde Configuración.
 - Matching de equipo y lectura de indicadores con IA vía OpenRouter (`server/`); la IA recibe solo el perfil minimizado según la visibilidad elegida, el usuario puede ver ese payload exacto antes de enviarlo, y sin clave configurada todo cae a un ranking local declarado como tal.
 - Modelo de ingresos declarado en la landing: suscripción de proveedores y comisión por acuerdos cerrados; nunca venta de datos. Ninguno está implementado todavía.
 - Inferido del brief: el onboarding debe llegar a la decisión de zona antes de abrir el dashboard.
+- Tutorial dedicado (`/tutorial`) explica el flujo completo y, a fondo, cómo funciona "Tu equipo" — enlazado desde el menú y mostrado como banner descartable la primera vez que se abre el dashboard.
 - La ruta explica fuentes y evidencia, pero no expide permisos ni garantiza cumplimiento; uso de suelo, apertura, Protección Civil y varios requisitos dependen del municipio y la actividad.
 
 ## Brand Commitments

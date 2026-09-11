@@ -14,7 +14,7 @@ import { useApp } from "../context/AppContext";
 import { generateMockHeatmap } from "../data/mockData";
 import { useCityCenter } from "../hooks/useCityCenter";
 import { useCountUp } from "../hooks/useCountUp";
-import { IconTrendUp, IconRoute, IconChat, IconMap, IconUsers } from "../components/icons";
+import { IconTrendUp, IconRoute, IconChat, IconMap, IconUsers, IconHelp } from "../components/icons";
 import { communityMessages, providers } from "../data/mockData";
 import { buildMinimizedProfile } from "../lib/privacy";
 import { providerKindLabel, rankProviders } from "../lib/matching";
@@ -50,7 +50,7 @@ function KpiValue({ value, prefix = "", suffix = "" }: { value: number; prefix?:
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { businessForm, report, steps, progress, preferences } = useApp();
+  const { businessForm, report, steps, progress, preferences, savePreferences } = useApp();
   const { center } = useCityCenter(businessForm);
 
   const heatmap = useMemo(() => (businessForm ? generateMockHeatmap(businessForm) : null), [businessForm]);
@@ -86,6 +86,19 @@ export default function Dashboard() {
 
   return (
     <div className="stack" style={{ gap: 20 }}>
+      {!preferences.tutorialSeen && (
+        <div className="card row" style={{ alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap", background: "var(--navItemActiveBg)", borderColor: "var(--accentBlue)" }}>
+          <div className="row" style={{ alignItems: "center", gap: 10 }}>
+            <IconHelp size={18} />
+            <span style={{ fontSize: 13.5 }}>¿Primera vez aquí? Un recorrido de 2 minutos por el flujo completo y cómo funciona tu equipo.</span>
+          </div>
+          <div className="row" style={{ gap: 8 }}>
+            <button className="btn btn-primary" onClick={() => navigate("/tutorial")}>Ver tutorial</button>
+            <button className="btn btn-ghost" onClick={() => savePreferences({ tutorialSeen: true })}>Ya lo vi</button>
+          </div>
+        </div>
+      )}
+
       <div className="stack" style={{ gap: 4 }}>
         <span className="pill">{businessForm.location.city}, {businessForm.location.state}</span>
         <h1>Tu negocio: {businessForm.businessType}</h1>

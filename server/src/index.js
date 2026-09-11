@@ -1,11 +1,20 @@
+import dns from "node:dns";
 import express from "express";
 import cors from "cors";
+
+// Some networks have a broken/unreachable IPv6 route to hosts that still
+// publish AAAA records (Overpass's public instance does). Node's fetch
+// tries IPv6 first by default and can hang for the full timeout before
+// falling back — curl doesn't have this problem, which is what made the
+// symptom confusing while debugging. Prefer IPv4 for all outbound requests.
+dns.setDefaultResultOrder("ipv4first");
 import { fetchRealPoints } from "./overpass.js";
 import { zoneCenters, boundingBox, bucketPoints, scoreFromCount } from "./zones.js";
-import { sanitizeProfile, sanitizeCandidates, sanitizeSteps, sanitizeReportNumbers, ValidationError } from "./privacy.js";
+import { sanitizeProfile, sanitizeCandidates, sanitizeSteps, sanitizeReportNumbers, sanitizeBusinessForm, ValidationError } from "./privacy.js";
 import { chatJson, llmStatus, LlmUnavailable } from "./llm.js";
 import { rankCandidates, fallbackInsights } from "./matching.js";
 import { rateLimit } from "./ratelimit.js";
+import { buildReport } from "./report.js";
 
 const app = express();
 
@@ -30,7 +39,7 @@ const aiLimiter = rateLimit(Number(process.env.AI_RATE_LIMIT_PER_MINUTE || 20));
 app.get("/", (_req, res) => {
   res.json({
     name: "tlacuachic-server",
-    endpoints: ["/api/health", "/api/ai/status", "/api/density?lat=&lng=&category=", "POST /api/match", "POST /api/insights"],
+    endpoints: ["/api/health", "/api/ai/status", "/api/density?lat=&lng=&category=", "POST /api/report", "POST /api/match", "POST /api/insights"],
   });
 });
 
@@ -74,6 +83,26 @@ app.get("/api/density", async (req, res) => {
     console.error("[density] Overpass fetch failed:", err.message);
     res.status(502).json({ error: "upstream_unavailable", message: "Could not reach OpenStreetMap Overpass API" });
   }
+});
+
+// POST /api/report
+// Body: a business form (businessType, category, budget, experience,
+// description, location). Geocodes the city, counts REAL nearby similar
+// businesses via OpenStreetMap, and asks the model to reason a market
+// reading grounded in that count plus the user's own description. Always
+// returns a usable report — falls back to a local heuristic (still using
+// the real count) if the model is unavailable.
+app.post("/api/report", aiLimiter, async (req, res) => {
+  let form;
+  try {
+    form = sanitizeBusinessForm(req.body);
+  } catch (err) {
+    if (err instanceof ValidationError) return res.status(400).json({ error: "invalid_request", message: err.message });
+    throw err;
+  }
+
+  const report = await buildReport(form);
+  res.json(report);
 });
 
 // POST /api/match
@@ -157,9 +186,10 @@ app.post("/api/insights", aiLimiter, async (req, res) => {
         "Escribe entre 3 y 4 frases cortas en español. Cada una informa qué significa un número y qué suelen revisar los profesionales (contadores, asesores, dueños con experiencia) ante ese dato. Aclara cuando un dato es estimación.",
         "Tono: informativo, no directivo. Nada de 'debes', 'te recomiendo' ni 'haz'. Presenta contexto y prácticas comunes; la decisión es de la persona.",
         "No prometas resultados, no des asesoría legal ni fiscal, no inventes cifras que no estén en los datos.",
+        "Si localBusinessCount es 0, eso puede significar que no se pudo consultar OpenStreetMap en ese momento, no que se haya confirmado ausencia de competencia — no afirmes 'no hay competencia' en ese caso.",
         'Responde SOLO con JSON válido: {"insights": ["frase 1", "frase 2", "frase 3"]}',
       ].join(" "),
-      user: JSON.stringify({ perfil: profile, indicadores: report, nota: "localBusinessCount viene de OpenStreetMap; el resto son estimaciones del prototipo." }),
+      user: JSON.stringify({ perfil: profile, indicadores: report, nota: "localBusinessCount viene de OpenStreetMap cuando fue posible consultarlo; el resto son estimaciones del prototipo." }),
       temperature: 0.4,
     });
 

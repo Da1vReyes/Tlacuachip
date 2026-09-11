@@ -201,3 +201,13 @@ export function IconSparkle({ size = 24 }: IconProps) {
     </svg>
   );
 }
+
+export function IconHelp({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...base}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.2 9.3a2.8 2.8 0 0 1 5.4 1c0 1.8-2.6 2-2.6 3.7" />
+      <circle cx="12" cy="17" r="0.15" fill="currentColor" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}

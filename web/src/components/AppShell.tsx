@@ -2,7 +2,7 @@ import { type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { providerKindLabel } from "../lib/matching";
-import { IconRoute, IconChart, IconMap, IconUsers, IconBag, IconChat, IconLeaf, IconArrowLeft, IconGrid, IconSettings, IconForm } from "./icons";
+import { IconRoute, IconChart, IconMap, IconUsers, IconBag, IconChat, IconLeaf, IconArrowLeft, IconGrid, IconSettings, IconForm, IconHelp } from "./icons";
 
 const fullBleedRoutes = ["/", "/auth", "/formulario", "/onboarding/mapa"];
 
@@ -19,6 +19,8 @@ const entrepreneurNav: NavItem[] = [
   { path: "/mentores", label: "Mentores", icon: IconChat },
   { path: "/marketplace", label: "Marketplace", icon: IconBag },
   { path: "/comunidad", label: "Comunidad", icon: IconChat },
+  { section: "Ayuda" },
+  { path: "/tutorial", label: "Cómo funciona", icon: IconHelp },
   { path: "/configuracion", label: "Configuración", icon: IconSettings },
 ];
 
@@ -28,6 +30,8 @@ const providerNav: NavItem[] = [
   { path: "/proveedor/nuevo", label: "Mi perfil", icon: IconForm },
   { section: "Red" },
   { path: "/comunidad", label: "Comunidad", icon: IconChat },
+  { section: "Ayuda" },
+  { path: "/tutorial", label: "Cómo funciona", icon: IconHelp },
   { path: "/configuracion", label: "Configuración", icon: IconSettings },
 ];
 
@@ -44,6 +48,7 @@ const titles: Record<string, string> = {
   "/proveedor/panel": "Panel de proveedor",
   "/comunidad": "Comunidad",
   "/configuracion": "Configuración",
+  "/tutorial": "Cómo funciona",
 };
 
 export default function AppShell({ children }: { children: ReactNode }) {
