@@ -1,22 +1,35 @@
 import { type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
-import { IconRoute, IconChart, IconMap, IconUsers, IconBag, IconChat, IconLeaf, IconArrowLeft, IconGrid, IconSettings } from "./icons";
+import { providerKindLabel } from "../lib/matching";
+import { IconRoute, IconChart, IconMap, IconUsers, IconBag, IconChat, IconLeaf, IconArrowLeft, IconGrid, IconSettings, IconForm } from "./icons";
 
 const fullBleedRoutes = ["/", "/auth", "/formulario", "/onboarding/mapa"];
 
-const navItems = [
+type NavItem = { section: string } | { path: string; label: string; icon: typeof IconGrid };
+
+const entrepreneurNav: NavItem[] = [
   { section: "Tu negocio" },
   { path: "/dashboard", label: "Dashboard", icon: IconGrid },
   { path: "/reporte", label: "Reporte de mercado", icon: IconChart },
   { path: "/mapa-calor", label: "Mapa de calor", icon: IconMap },
   { path: "/roadmap", label: "Tu camino", icon: IconRoute },
-  { section: "Comunidad" },
-  { path: "/mentores", label: "Mentores", icon: IconUsers },
+  { section: "Tu red" },
+  { path: "/equipo", label: "Tu equipo", icon: IconUsers },
+  { path: "/mentores", label: "Mentores", icon: IconChat },
   { path: "/marketplace", label: "Marketplace", icon: IconBag },
   { path: "/comunidad", label: "Comunidad", icon: IconChat },
   { path: "/configuracion", label: "Configuración", icon: IconSettings },
-] as const;
+];
+
+const providerNav: NavItem[] = [
+  { section: "Tu servicio" },
+  { path: "/proveedor/panel", label: "Panel", icon: IconGrid },
+  { path: "/proveedor/nuevo", label: "Mi perfil", icon: IconForm },
+  { section: "Red" },
+  { path: "/comunidad", label: "Comunidad", icon: IconChat },
+  { path: "/configuracion", label: "Configuración", icon: IconSettings },
+];
 
 const titles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -24,9 +37,11 @@ const titles: Record<string, string> = {
   "/reporte": "Reporte de mercado",
   "/mapa-calor": "Mapa de calor",
   "/roadmap": "Tu camino",
+  "/equipo": "Tu equipo",
   "/mentores": "Mentores",
   "/marketplace": "Marketplace",
-  "/proveedor/nuevo": "Registro de proveedor",
+  "/proveedor/nuevo": "Perfil de proveedor",
+  "/proveedor/panel": "Panel de proveedor",
   "/comunidad": "Comunidad",
   "/configuracion": "Configuración",
 };
@@ -34,15 +49,16 @@ const titles: Record<string, string> = {
 export default function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, progress } = useApp();
+  const { user, progress, providerProfile } = useApp();
 
   if (fullBleedRoutes.includes(location.pathname)) {
     return <>{children}</>;
   }
 
+  const isProvider = user?.role === "provider";
+  const navItems = isProvider ? providerNav : entrepreneurNav;
   const isStepDetail = location.pathname.startsWith("/paso/");
-  const isProviderSignup = location.pathname === "/proveedor/nuevo";
-  const isFormulario = location.pathname === "/formulario";
+  const showBack = isStepDetail || location.pathname === "/proveedor/nuevo";
   const title = isStepDetail ? "Detalle del paso" : titles[location.pathname] ?? "Tlacuachip";
   const xpPct = Math.min(100, Math.round(((progress.xp % 400) / 400) * 100));
 
@@ -74,19 +90,27 @@ export default function AppShell({ children }: { children: ReactNode }) {
           )}
         </nav>
         <div className="sidebar-footer stack" style={{ gap: 6 }}>
-          <span className="muted" style={{ fontWeight: 600 }}>
-            Nivel {progress.level} · {progress.xp} XP
-          </span>
-          <div className="progress-track">
-            <div className="progress-fill" style={{ transform: `scaleX(${xpPct / 100})` }} />
-          </div>
+          {isProvider ? (
+            <span className="muted" style={{ fontWeight: 600 }}>
+              {providerProfile ? providerKindLabel[providerProfile.kind] : "Proveedor"}{providerProfile?.isAI ? " · IA" : ""}
+            </span>
+          ) : (
+            <>
+              <span className="muted" style={{ fontWeight: 600 }}>
+                Nivel {progress.level} · {progress.xp} XP
+              </span>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ transform: `scaleX(${xpPct / 100})` }} />
+              </div>
+            </>
+          )}
         </div>
       </aside>
 
       <div className="main-col">
         <header className="topbar">
           <div className="topbar-left">
-            {(isStepDetail || isProviderSignup || isFormulario) && (
+            {showBack && (
               <button className="topbar-back" onClick={() => navigate(-1)} aria-label="Volver">
                 <IconArrowLeft size={15} />
               </button>

@@ -2,21 +2,44 @@ import express from "express";
 import cors from "cors";
 import { fetchRealPoints } from "./overpass.js";
 import { zoneCenters, boundingBox, bucketPoints, scoreFromCount } from "./zones.js";
+import { sanitizeProfile, sanitizeCandidates, sanitizeSteps, sanitizeReportNumbers, ValidationError } from "./privacy.js";
+import { chatJson, llmStatus, LlmUnavailable } from "./llm.js";
+import { rankCandidates, fallbackInsights } from "./matching.js";
+import { rateLimit } from "./ratelimit.js";
 
 const app = express();
-app.use(cors());
+
+// Only the web app's origins may call this API from a browser. Requests
+// without an Origin header (curl, server-to-server) are still allowed.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173,http://localhost:5180,http://127.0.0.1:5173,http://127.0.0.1:5180")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)),
+  })
+);
+app.use(express.json({ limit: "64kb" }));
+app.disable("x-powered-by");
 
 const PORT = process.env.PORT || 4000;
+const aiLimiter = rateLimit(Number(process.env.AI_RATE_LIMIT_PER_MINUTE || 20));
 
 app.get("/", (_req, res) => {
   res.json({
     name: "tlacuachip-server",
-    endpoints: ["/api/health", "/api/density?lat=&lng=&category="],
+    endpoints: ["/api/health", "/api/ai/status", "/api/density?lat=&lng=&category=", "POST /api/match", "POST /api/insights"],
   });
 });
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
+});
+
+app.get("/api/ai/status", (_req, res) => {
+  res.json(llmStatus());
 });
 
 // GET /api/density?lat=19.43&lng=-99.13&category=cafeteria
@@ -53,6 +76,116 @@ app.get("/api/density", async (req, res) => {
   }
 });
 
+// POST /api/match
+// Body: { profile, candidates, steps }. The profile is re-minimized here per
+// the user's visibility settings; the model only chooses among `candidates`
+// and its output is filtered back to that list. Falls back to the local
+// ranking when the model is unavailable.
+app.post("/api/match", aiLimiter, async (req, res) => {
+  let profile;
+  let candidates;
+  let steps;
+  try {
+    profile = sanitizeProfile(req.body?.profile);
+    candidates = sanitizeCandidates(req.body?.candidates);
+    steps = sanitizeSteps(req.body?.steps);
+  } catch (err) {
+    if (err instanceof ValidationError) return res.status(400).json({ error: "invalid_request", message: err.message });
+    throw err;
+  }
+
+  const fallback = rankCandidates(profile, candidates, steps);
+
+  try {
+    const { model, data } = await chatJson({
+      system: [
+        "Eres el asistente de Tlacuachip, una plataforma que ayuda a microemprendedores en México a formalizar su negocio.",
+        "Recibes el perfil mínimo de un emprendedor y una lista de proveedores candidatos (abogados, contadores, asesores, marketing, gestoría, insumos).",
+        "Elige entre 3 y 6 candidatos y explica en una frase concreta (máximo 140 caracteres, español, tono directo) por qué cada uno le sirve, priorizando su siguiente paso pendiente.",
+        "Nunca inventes proveedores: usa únicamente los `id` de la lista. Nunca prometas resultados ni des asesoría legal o fiscal.",
+        "Responde SOLO con JSON válido con esta forma exacta:",
+        '{"summary": "una frase en español", "recommendations": [{"providerId": "id", "reason": "texto", "forStepId": "id de paso o null"}]}',
+      ].join(" "),
+      user: JSON.stringify({ perfil: profile, siguientePaso: steps.find((s) => s.id === profile.nextStepId) ?? null, candidatos: candidates }),
+    });
+
+    const allowed = new Map(candidates.map((c) => [c.id, c]));
+    const stepIds = new Set(steps.map((s) => s.id));
+    const recommendations = (Array.isArray(data?.recommendations) ? data.recommendations : [])
+      .filter((r) => r && typeof r.providerId === "string" && allowed.has(r.providerId))
+      .slice(0, 6)
+      .map((r) => ({
+        providerId: r.providerId,
+        reason: typeof r.reason === "string" ? r.reason.slice(0, 160) : "recomendado por la IA",
+        forStepId: typeof r.forStepId === "string" && stepIds.has(r.forStepId) ? r.forStepId : allowed.get(r.providerId).helpsWith.includes(profile.nextStepId) ? profile.nextStepId : undefined,
+      }));
+
+    if (recommendations.length === 0) throw new LlmUnavailable("Model returned no usable recommendations");
+
+    res.json({
+      source: "llm",
+      model,
+      summary: typeof data?.summary === "string" ? data.summary.slice(0, 240) : undefined,
+      recommendations,
+    });
+  } catch (err) {
+    if (!(err instanceof LlmUnavailable)) throw err;
+    console.warn("[match] falling back to local ranking:", err.message);
+    res.json({ source: "fallback", model: null, recommendations: fallback });
+  }
+});
+
+// POST /api/insights
+// Body: { profile, report }. Turns the report's indicators into a short,
+// plain-language reading. Same privacy path as /api/match.
+app.post("/api/insights", aiLimiter, async (req, res) => {
+  let profile;
+  let report;
+  try {
+    profile = sanitizeProfile(req.body?.profile);
+    report = sanitizeReportNumbers(req.body?.report);
+  } catch (err) {
+    if (err instanceof ValidationError) return res.status(400).json({ error: "invalid_request", message: err.message });
+    throw err;
+  }
+
+  try {
+    const { model, data } = await chatJson({
+      system: [
+        "Eres el asistente de Tlacuachip. Interpretas indicadores de mercado para una persona que quiere abrir una microempresa en México y no tiene formación financiera.",
+        "Escribe entre 3 y 4 frases cortas en español, cada una un insight accionable sobre los números recibidos. Aclara cuando un dato es estimación.",
+        "No prometas resultados, no des asesoría legal ni fiscal, no inventes cifras que no estén en los datos.",
+        'Responde SOLO con JSON válido: {"insights": ["frase 1", "frase 2", "frase 3"]}',
+      ].join(" "),
+      user: JSON.stringify({ perfil: profile, indicadores: report, nota: "localBusinessCount viene de OpenStreetMap; el resto son estimaciones del prototipo." }),
+      temperature: 0.4,
+    });
+
+    const insights = (Array.isArray(data?.insights) ? data.insights : [])
+      .filter((s) => typeof s === "string" && s.trim())
+      .slice(0, 4)
+      .map((s) => s.trim().slice(0, 280));
+
+    if (insights.length === 0) throw new LlmUnavailable("Model returned no insights");
+
+    res.json({ source: "llm", model, insights });
+  } catch (err) {
+    if (!(err instanceof LlmUnavailable)) throw err;
+    console.warn("[insights] falling back to template:", err.message);
+    res.json({ source: "fallback", model: null, insights: fallbackInsights(profile, report) });
+  }
+});
+
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  if (err?.type === "entity.too.large") return res.status(413).json({ error: "payload_too_large" });
+  if (err?.type === "entity.parse.failed") return res.status(400).json({ error: "invalid_json" });
+  console.error("[server] unhandled error:", err);
+  res.status(500).json({ error: "internal_error" });
+});
+
 app.listen(PORT, () => {
+  const { configured, model } = llmStatus();
   console.log(`tlacuachip-server listening on http://localhost:${PORT}`);
+  console.log(configured ? `[ai] OpenRouter configured (model: ${model})` : "[ai] OPENROUTER_API_KEY not set — /api/match and /api/insights use local fallbacks");
 });

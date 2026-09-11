@@ -1061,3 +1061,37 @@ p {
     transition: none !important;
   }
 }
+
+/* ---------- Roles, team & AI transparency ---------- */
+
+.role-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.role-card {
+  display: grid; gap: 6px; justify-items: start; text-align: left;
+  padding: 14px; border: 1px solid var(--inputBorder); border-radius: var(--radius);
+  background: var(--primaryBg); color: var(--primaryText); cursor: pointer; font-family: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.role-card:hover { border-color: #9ca2aa; }
+.role-card.selected { border-color: var(--accentBlue); background: #f4f7ff; }
+.role-card svg { color: var(--secondaryText); }
+.role-card.selected svg { color: var(--accentBlue); }
+.role-card strong { font-size: 13px; }
+.role-card small { font-size: 11.5px; line-height: 1.4; color: var(--secondaryText); }
+
+.payload-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; margin: 0; border-top: 1px solid var(--mainBorder); }
+.payload-list > div { display: grid; gap: 2px; padding: 9px 0; border-bottom: 1px solid var(--mainBorder); }
+.payload-list dt { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--secondaryText); }
+.payload-list dd { margin: 0; font-size: 13px; color: var(--primaryText); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+.team-reason { font-size: 12.5px; color: var(--primaryText); padding: 8px 10px; border-left: 2px solid var(--accentBlue); background: var(--secondaryBg); }
+
+.landing-model { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); gap: clamp(48px, 8vw, 130px); }
+.landing-model-list { border-top: 1px solid var(--mainBorder); }
+.landing-model-list > div { display: grid; grid-template-columns: 38px 1fr; gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--mainBorder); }
+.landing-model-list b { color: var(--secondaryText); font-size: 12px; font-variant-numeric: tabular-nums; }
+.landing-model-list strong { display: block; font-size: 15px; }
+.landing-model-list p { margin: 6px 0 0; color: var(--secondaryText); font-size: 14px; line-height: 1.55; }
+
+@media (max-width: 900px) {
+  .role-grid, .payload-list, .landing-model { grid-template-columns: 1fr; }
+}

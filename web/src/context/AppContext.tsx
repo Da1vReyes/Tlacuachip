@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import type { BusinessFormData, DataPreferences, ReportData, User, UserProgress } from "../types";
+import type { BusinessFormData, DataPreferences, ProviderProfile, ReportData, User, UserProgress, UserRole } from "../types";
 import { roadmapSteps as initialSteps } from "../data/mockData";
 import type { RoadmapStep } from "../types";
 
@@ -9,11 +9,16 @@ interface AppState {
   report: ReportData | null;
   progress: UserProgress;
   preferences: DataPreferences;
+  providerProfile: ProviderProfile | null;
+  team: string[];
   steps: RoadmapStep[];
-  login: (email: string, name?: string) => void;
+  login: (email: string, name?: string, role?: UserRole) => void;
   logout: () => void;
+  setRole: (role: UserRole) => void;
   saveBusinessForm: (form: BusinessFormData) => void;
   saveReport: (report: ReportData) => void;
+  saveProviderProfile: (profile: ProviderProfile) => void;
+  toggleTeamProvider: (providerId: string) => void;
   completeStep: (stepId: string) => void;
   savePreferences: (preferences: Partial<DataPreferences>) => void;
   deleteAllData: () => void;
@@ -51,12 +56,24 @@ interface Persisted {
   report: ReportData | null;
   progress: UserProgress;
   preferences: DataPreferences;
+  providerProfile: ProviderProfile | null;
+  team: string[];
 }
 
 const defaultPreferences: DataPreferences = {
   visibility: "business",
   locationPrecision: "city",
   onboardingComplete: false,
+};
+
+const emptyState: Persisted = {
+  user: null,
+  businessForm: null,
+  report: null,
+  progress: defaultProgress,
+  preferences: defaultPreferences,
+  providerProfile: null,
+  team: [],
 };
 
 // Read synchronously during the first render (via useState's lazy
@@ -69,7 +86,7 @@ const defaultPreferences: DataPreferences = {
 function loadPersisted(): Persisted {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { user: null, businessForm: null, report: null, progress: defaultProgress, preferences: defaultPreferences };
+    if (!raw) return emptyState;
     const parsed = JSON.parse(raw);
     return {
       user: parsed.user ?? null,
@@ -77,9 +94,11 @@ function loadPersisted(): Persisted {
       report: parsed.report ?? null,
       progress: parsed.progress ?? defaultProgress,
       preferences: { ...defaultPreferences, ...(parsed.preferences ?? {}) },
+      providerProfile: parsed.providerProfile ?? null,
+      team: Array.isArray(parsed.team) ? parsed.team : [],
     };
   } catch {
-    return { user: null, businessForm: null, report: null, progress: defaultProgress, preferences: defaultPreferences };
+    return emptyState;
   }
 }
 
@@ -90,6 +109,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [report, setReport] = useState<ReportData | null>(persisted.report);
   const [progress, setProgress] = useState<UserProgress>(persisted.progress);
   const [preferences, setPreferences] = useState<DataPreferences>(persisted.preferences);
+  const [providerProfile, setProviderProfile] = useState<ProviderProfile | null>(persisted.providerProfile);
+  const [team, setTeam] = useState<string[]>(persisted.team);
   const skipNextPersist = useRef(false);
 
   useEffect(() => {
@@ -99,16 +120,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ user, businessForm, report, progress, preferences })
+      JSON.stringify({ user, businessForm, report, progress, preferences, providerProfile, team })
     );
-  }, [user, businessForm, report, progress, preferences]);
+  }, [user, businessForm, report, progress, preferences, providerProfile, team]);
 
   const steps = unlockNextSteps(initialSteps, progress.completedSteps);
 
-  const login = (email: string, name?: string) => setUser({ email, name });
+  const login = (email: string, name?: string, role?: UserRole) =>
+    setUser((prev) => ({ email, name: name ?? prev?.name, role: role ?? prev?.role ?? "entrepreneur" }));
   const logout = () => setUser(null);
+  const setRole = (role: UserRole) => setUser((prev) => (prev ? { ...prev, role } : prev));
   const saveBusinessForm = (form: BusinessFormData) => setBusinessForm(form);
   const saveReport = (r: ReportData) => setReport(r);
+  const saveProviderProfile = (profile: ProviderProfile) => setProviderProfile(profile);
+  const toggleTeamProvider = (providerId: string) =>
+    setTeam((prev) => (prev.includes(providerId) ? prev.filter((id) => id !== providerId) : [...prev, providerId]));
   const savePreferences = (next: Partial<DataPreferences>) => setPreferences((previous) => ({ ...previous, ...next }));
   const deleteAllData = () => {
     skipNextPersist.current = true;
@@ -118,6 +144,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setReport(null);
     setProgress(defaultProgress);
     setPreferences(defaultPreferences);
+    setProviderProfile(null);
+    setTeam([]);
   };
 
   const completeStep = (stepId: string) => {
@@ -137,7 +165,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ user, businessForm, report, progress, preferences, steps, login, logout, saveBusinessForm, saveReport, completeStep, savePreferences, deleteAllData }}
+      value={{
+        user,
+        businessForm,
+        report,
+        progress,
+        preferences,
+        providerProfile,
+        team,
+        steps,
+        login,
+        logout,
+        setRole,
+        saveBusinessForm,
+        saveReport,
+        saveProviderProfile,
+        toggleTeamProvider,
+        completeStep,
+        savePreferences,
+        deleteAllData,
+      }}
     >
       {children}
     </AppContext.Provider>

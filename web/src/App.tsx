@@ -12,6 +12,8 @@ import StepDetail from "./pages/StepDetail";
 import Mentors from "./pages/Mentors";
 import Marketplace from "./pages/Marketplace";
 import ProviderSignup from "./pages/ProviderSignup";
+import ProviderDashboard from "./pages/ProviderDashboard";
+import Team from "./pages/Team";
 import Community from "./pages/Community";
 import MapOnboarding from "./pages/MapOnboarding";
 import Settings from "./pages/Settings";
@@ -33,7 +35,9 @@ export default function App() {
             <Route path="/paso/:stepId" element={<StepDetail />} />
             <Route path="/mentores" element={<Mentors />} />
             <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/equipo" element={<Team />} />
             <Route path="/proveedor/nuevo" element={<ProviderSignup />} />
+            <Route path="/proveedor/panel" element={<ProviderDashboard />} />
             <Route path="/comunidad" element={<Community />} />
             <Route path="/configuracion" element={<Settings />} />
           </Routes>

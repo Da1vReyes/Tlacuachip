@@ -25,8 +25,21 @@ budget (from $50 to $500,000 MXN) turn it into a real business. Flow:
 7. **Roadmap** — horizontal gamified timeline of steps to actually open the
    business, each connecting to mentors/suppliers when relevant
    (`Roadmap.tsx`, `StepDetail.tsx`)
-8. **Mentors / Marketplace / Community / Settings** — supporting screens.
+8. **Your team** — AI-curated roster of lawyers, accountants, financial
+   advisors, marketing (human or AI agent), gestoría and suppliers, ranked
+   by the entrepreneur's *next pending roadmap step* and city, with a
+   "what the AI will see" panel showing the exact minimized payload before
+   anything leaves the device (`Team.tsx`, `lib/privacy.ts`, `lib/matching.ts`).
+9. **Mentors / Marketplace / Community / Settings** — supporting screens.
    `Settings.tsx` owns profile visibility, location precision and data deletion.
+
+**Two roles.** At sign-up the user picks *Quiero emprender* or *Ofrezco
+servicios* (`Auth.tsx`, `user.role`). Providers get their own flow:
+`ProviderSignup.tsx` (public profile + which roadmap steps they help with)
+→ `ProviderDashboard.tsx` (how they appear, when they get surfaced, the
+revenue model). `AppShell` swaps the sidebar per role. A provider is
+surfaced to an entrepreneur only through `helpsWith` ↔ roadmap step ids —
+never as a generic ad.
 
 ## Repo layout
 
@@ -74,7 +87,16 @@ cd web && npm install && npm run dev      # http://localhost:5173 (Vite picks a 
 `web` talks to the API via `VITE_API_URL` (see `web/.env.example`), default
 `http://localhost:4000`. The app degrades gracefully if the API is down —
 the heatmap falls back to estimated (mock) supply numbers instead of real
-OpenStreetMap counts. Nothing else depends on the backend.
+OpenStreetMap counts, and the AI features fall back to local rankings.
+
+**AI (OpenRouter).** Copy `server/.env.example` to `server/.env` and set
+`OPENROUTER_API_KEY` (optionally `OPENROUTER_MODEL`, default
+`openai/gpt-4o-mini`). `npm run dev` loads it via Node's
+`--env-file-if-exists` — no dotenv dependency. Without a key,
+`GET /api/ai/status` reports `configured: false`, the UI disables the
+"Recomendar con IA" / "Interpretar con IA" buttons and says so, and
+`POST /api/match` / `POST /api/insights` answer with `source: "fallback"`
+using `server/src/matching.js`. The key never reaches the browser.
 
 Type-check and lint before pushing:
 
@@ -103,7 +125,23 @@ There's no test suite yet (hackathon timeline). If you add non-trivial logic
   up — see the credibility discussion this repo grew out of.
 - Routing is `HashRouter` (`react-router-dom`) — URLs look like
   `/#/roadmap`. That's deliberate: it means `web/` can be deployed as a
-  static site with zero server-side routing config.
+  static site with zero server-side routing config. Query strings live
+  inside the hash (`/#/auth?role=provider`) and `useSearchParams` reads them.
+- **Privacy is enforced twice, on purpose.** The client builds the exact
+  payload the AI gets (`web/src/lib/privacy.ts → buildMinimizedProfile`)
+  from `preferences.visibility` / `locationPrecision`, and shows it to the
+  user verbatim. The server then re-runs the same rules
+  (`server/src/privacy.js → sanitizeProfile`) and drops anything the
+  visibility level doesn't allow, plus whitelists/caps every field. Email,
+  name, exact budget and address are never part of the schema at all.
+  If you add a field to the profile, add it to BOTH minimizers and decide
+  which visibility level unlocks it.
+- **Matching** is deterministic first (`lib/matching.ts` ↔
+  `server/src/matching.js`, keep them in sync): score = rating + 6 if the
+  provider helps with the next pending step (+2 for a future step) + 2 for
+  same city (+1 for an AI agent) ± category fit. The LLM only *chooses and
+  explains* among the top 8 candidates the client sends; its output is
+  filtered back to that candidate list, so it cannot invent a provider.
 
 ## Design system
 
@@ -192,9 +230,19 @@ file unless you have a concrete reason; they're flagged, not broken.
 - **Zone grid is duplicated** across `web` and `server` (see Repo layout) —
   extract to a shared package if this grows past hackathon scope.
 - `server` has no persistence or auth — it's a stateless proxy in front of
-  Overpass with an in-memory cache (10 min TTL). Fine for a demo; add a real
-  cache/store before relying on it for anything with sustained traffic —
-  Overpass's public instance rate-limits aggressively.
+  Overpass (10 min in-memory cache) plus two LLM routes behind a per-IP
+  rate limit (`AI_RATE_LIMIT_PER_MINUTE`, default 20). Fine for a demo; add
+  a shared store before running more than one process.
+- **The provider roster is seed data** (`web/src/data/mockData.ts →
+  providers`). A real provider signing up today only persists locally
+  (`providerProfile` in `AppContext`) and isn't added to the roster other
+  users see — wiring that needs `services/catalog-service` (whose schema is
+  now behind: it still has the old `type/category` provider shape and the
+  old roadmap step ids). Update its `schema.sql` + `seed.js` before cutting
+  over.
+- **Contacting a provider isn't built** — "Guardar en mi equipo" persists a
+  list; there's no messaging or deal flow yet, so the commission revenue
+  stream described on the landing page has no mechanism behind it.
 
 ## Contributing
 

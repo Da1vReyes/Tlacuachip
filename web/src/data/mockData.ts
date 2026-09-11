@@ -325,12 +325,20 @@ export const mentors: Mentor[] = [
   { id: "m4", name: "Diego Torres", expertise: "Talleres mecánicos", businessesOpened: 2, location: "Bogotá, Colombia", rating: 4.6, avatarColor: "#6DE0A9" },
 ];
 
+// Professionals and suppliers who signed up to be found. `helpsWith` maps to
+// roadmap step ids so a provider can be surfaced exactly when the step that
+// needs them becomes the entrepreneur's next move.
 export const providers: Provider[] = [
-  { id: "p1", name: "Café Altura Mayor", category: "cafeteria", type: "producto", location: "CDMX, México", rating: 4.8, description: "Proveedor de café en grano de origen, mínimo 10kg." },
-  { id: "p2", name: "Muebles Industriales RM", category: "cafeteria", type: "producto", location: "Puebla, México", rating: 4.5, description: "Mobiliario para cafeterías y restaurantes, hecho a medida." },
-  { id: "p3", name: "Plomería Express", category: "general", type: "servicio", location: "CDMX, México", rating: 4.7, description: "Instalación y mantenimiento para locales comerciales." },
-  { id: "p4", name: "Distribuidora de Cubiertos GO", category: "restaurante", type: "producto", location: "Guadalajara, México", rating: 4.4, description: "Cubiertos, vajilla y desechables al mayoreo." },
-  { id: "p5", name: "Electricistas del Valle", category: "general", type: "servicio", location: "Monterrey, México", rating: 4.9, description: "Instalaciones eléctricas certificadas para negocios." },
+  { id: "p-abogado-1", name: "Despacho Ortega & Lira", kind: "abogado", category: "general", type: "servicio", location: "Ciudad de México, México", city: "Ciudad de México", rating: 4.9, description: "Uso de suelo, licencias municipales y contratos de arrendamiento para locales comerciales. Primera consulta sin costo.", helpsWith: ["local-viability", "municipal-opening", "brand-and-growth"] },
+  { id: "p-abogado-2", name: "Lic. Mariana Cuevas", kind: "abogado", category: "general", type: "servicio", location: "Guadalajara, México", city: "Guadalajara", rating: 4.7, description: "Permisos sanitarios y regulatorios para alimentos, bebidas y salud. Registro de marca ante el IMPI.", helpsWith: ["sector-permits", "brand-and-growth"] },
+  { id: "p-contador-1", name: "Contadora Elena Ruiz", kind: "contador", category: "general", type: "servicio", location: "Ciudad de México, México", city: "Ciudad de México", rating: 4.8, description: "Alta en el SAT, elección de régimen, e.firma y facturación para negocios que empiezan. Explica sin tecnicismos.", helpsWith: ["sat-rfc", "fiscal-setup", "operational-ready"] },
+  { id: "p-contador-2", name: "Núñez Contadores", kind: "contador", category: "general", type: "servicio", location: "Monterrey, México", city: "Monterrey", rating: 4.6, description: "Nómina, alta patronal ante el IMSS y obligaciones laborales para micro y pequeñas empresas.", helpsWith: ["employment-imss", "fiscal-setup"] },
+  { id: "p-asesor-1", name: "Rodrigo Salas · Asesor financiero", kind: "asesor-financiero", category: "general", type: "servicio", location: "Puebla, México", city: "Puebla", rating: 4.7, description: "Presupuesto de arranque, flujo de efectivo y colchón operativo. Trabaja por sesión, sin comisiones ocultas.", helpsWith: ["operational-ready", "local-viability"] },
+  { id: "p-marketing-1", name: "Estudio Nopal", kind: "marketing", category: "general", type: "servicio", location: "Ciudad de México, México", city: "Ciudad de México", rating: 4.5, description: "Identidad, redes sociales y presencia en mapas para negocios de barrio. Paquetes desde una semana de trabajo.", helpsWith: ["brand-and-growth", "operational-ready"] },
+  { id: "p-marketing-ai", name: "Agente de marketing Tlacuachip", kind: "marketing", isAI: true, category: "general", type: "servicio", location: "En línea", city: "En línea", rating: 4.3, description: "Agente de IA que redacta tu perfil de negocio, primeras publicaciones y un plan de contenido de 30 días. Revisas y apruebas cada pieza.", helpsWith: ["brand-and-growth"] },
+  { id: "p-gestoria-1", name: "Gestoría Trámite Fácil", kind: "gestoria", category: "general", type: "servicio", location: "Ciudad de México, México", city: "Ciudad de México", rating: 4.4, description: "Acompañamiento en ventanilla municipal, Protección Civil y avisos ante COFEPRIS. Cobra por trámite concluido.", helpsWith: ["municipal-opening", "sector-permits", "local-viability"] },
+  { id: "p-insumos-1", name: "Café Altura Mayor", kind: "insumos", category: "cafeteria", type: "producto", location: "Ciudad de México, México", city: "Ciudad de México", rating: 4.8, description: "Proveedor de café en grano de origen, mínimo 10 kg, con factura.", helpsWith: ["operational-ready"] },
+  { id: "p-insumos-2", name: "Distribuidora de Cubiertos GO", kind: "insumos", category: "restaurante", type: "producto", location: "Guadalajara, México", city: "Guadalajara", rating: 4.4, description: "Cubiertos, vajilla y desechables al mayoreo, con factura.", helpsWith: ["operational-ready"] },
 ];
 
 export const communityMessages: CommunityMessage[] = [

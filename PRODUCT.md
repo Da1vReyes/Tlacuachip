@@ -8,7 +8,7 @@ web
 
 ## Users
 
-Personas que quieren abrir una microempresa en México o Latinoamérica, normalmente con poca experiencia y un presupuesto de $50 a $500,000 MXN. También participan mentores y proveedores, pero el emprendedor es el usuario principal.
+Dos roles, elegidos al crear la cuenta. (1) Emprendedores que quieren abrir una microempresa en México o Latinoamérica, normalmente con poca experiencia y un presupuesto de $50 a $500,000 MXN: son el usuario principal. (2) Proveedores de servicios y productos —abogados, contadores, asesores financieros, marketing (humano o agente de IA), gestoría, insumos— que se registran para ser encontrados exactamente cuando un emprendedor llega al paso de la ruta en el que ayudan.
 
 ## Product Purpose
 
@@ -28,6 +28,8 @@ Flujo principal: crear cuenta, describir el negocio, decidir qué datos puede ve
 - Oferta/competencia: puntos de interés de OpenStreetMap consultados por Overpass.
 - Demanda y costos: estimaciones del prototipo; deben presentarse como tales.
 - Datos del perfil se persisten localmente en esta versión; el usuario puede editar visibilidad y eliminar su registro desde Configuración.
+- Matching de equipo y lectura de indicadores con IA vía OpenRouter (`server/`); la IA recibe solo el perfil minimizado según la visibilidad elegida, el usuario puede ver ese payload exacto antes de enviarlo, y sin clave configurada todo cae a un ranking local declarado como tal.
+- Modelo de ingresos declarado en la landing: suscripción de proveedores y comisión por acuerdos cerrados; nunca venta de datos. Ninguno está implementado todavía.
 - Inferido del brief: el onboarding debe llegar a la decisión de zona antes de abrir el dashboard.
 - La ruta explica fuentes y evidencia, pero no expide permisos ni garantiza cumplimiento; uso de suelo, apertura, Protección Civil y varios requisitos dependen del municipio y la actividad.
 
