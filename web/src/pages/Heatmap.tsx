@@ -213,17 +213,9 @@ export default function Heatmap() {
           <div className="card stack">
             <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
               <span className="muted">{meta.low}</span>
-              <div
-                style={{
-                  flex: 1,
-                  margin: "0 10px",
-                  height: 8,
-                  borderRadius: 999,
-                  background: meta.goodIsHigh
-                    ? "linear-gradient(90deg, #c8583a, #e0c76a, #238c63)"
-                    : "linear-gradient(90deg, #238c63, #e0c76a, #c8583a)",
-                }}
-              />
+              <div className={`map-scale${meta.goodIsHigh ? "" : " reverse"}`} aria-hidden="true">
+                <span /><span /><span />
+              </div>
               <span className="muted">{meta.high}</span>
             </div>
           </div>
