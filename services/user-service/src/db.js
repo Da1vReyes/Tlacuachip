@@ -7,7 +7,7 @@ const { Pool } = pg;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is required — copy e.env.example to e.env and set it.");
+  throw new Error("DATABASE_URL is required — copy .env.example to .env and set it.");
 }
 
 // Render (and most managed Postgres) terminate TLS with a cert that isn't
@@ -15,9 +15,14 @@ if (!process.env.DATABASE_URL) {
 // rejectUnauthorized:false keeps the connection encrypted but skips CA
 // verification. Fine for a hackathon DB, not for a cert you actually
 // need to trust — revisit if this ever holds real user data at scale.
+// Managed Postgres needs TLS; a local one usually doesn't. Skip TLS for
+// localhost URLs, or force it either way with DATABASE_SSL=true|false.
+const isLocal = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(process.env.DATABASE_URL);
+const useSsl = process.env.DATABASE_SSL ? process.env.DATABASE_SSL !== "false" : !isLocal;
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: useSsl ? { rejectUnauthorized: false } : false,
   // The hosted demo database has a costly TLS handshake. Keep a small warm
   // pool instead of paying that handshake on every login/profile request.
   min: 1,
