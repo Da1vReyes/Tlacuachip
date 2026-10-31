@@ -32,7 +32,7 @@ Built for a hackathon. The UI is in Spanish.
 
 ## Run it locally
 
-Requirements: Node 20+ (tested on 24) and a PostgreSQL database for the two
+Requirements: Node 22.9+ (tested on 24) and a PostgreSQL database for the two
 services (local or managed).
 
 ```bash
@@ -101,6 +101,6 @@ Environment variables are listed in each `.env.example`.
 - Test coverage is limited to the `server` core logic; the web app and the
   Postgres services have no automated tests.
 - The web bundle is ~550 kB; routes could be code-split.
-- The official DENUE snapshot is only partly bundled; see
+- The DENUE pilot snapshot (`server/data/denue-pilot.json`) is not in the repo, so the map uses Overpass; see
   `scripts/import-denue.mjs` to generate one locally.
 - A few `oxlint` warnings about state updates inside effects remain.
