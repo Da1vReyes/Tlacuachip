@@ -30,3 +30,6 @@ npm-debug.log*
 # external Overpass request.
 server/data/*
 !server/data/denue-pilot.json
+
+# Claude Code local config
+.claude/
